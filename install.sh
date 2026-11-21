@@ -85,8 +85,16 @@ if [ "$FROM_SOURCE" = "0" ]; then
     FROM_SOURCE=1
   fi
   if [ "$FROM_SOURCE" = "0" ]; then
-    tar -xzf "$tmp/openaula.tar.gz" -C "$tmp"
-    mv "$tmp/openaula" "$tmp/openaula.bin"
+    mkdir -p "$tmp/extract"
+    tar -xzf "$tmp/openaula.tar.gz" -C "$tmp/extract"
+    if [ -f "$tmp/extract/openaula" ]; then
+      mv "$tmp/extract/openaula" "$tmp/openaula.bin"
+    else
+      # Older releases named the binary openaula_linux_<arch>.
+      found="$(find "$tmp/extract" -maxdepth 1 -type f -name 'openaula*' ! -name '*.tar.gz' | head -n1)"
+      [ -n "$found" ] || die "el paquete no contiene el binario"
+      mv "$found" "$tmp/openaula.bin"
+    fi
   fi
 fi
 
