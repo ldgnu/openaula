@@ -91,6 +91,7 @@ openaula remap capslock=lctrl f1=media:play --layer normal
 openaula clock                                          # reloj del LCD
 openaula lcd color 255,0,0                              # LCD rojo
 openaula lcd image logo.png --yes                       # PNG, GIF o JPEG
+openaula lcd image logo.gif --yes --start 14346         # reanudar una subida cortada
 ```
 
 ### API

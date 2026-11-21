@@ -253,6 +253,11 @@ func (d *Dongle) sendChunks(cmd byte, data []byte) error {
 // dongle. The vendor hides this in wireless mode, so treat it as experimental.
 // progress is called with (chunksSent, totalChunks).
 func (d *Dongle) UploadLCD(buf []byte, slot uint8, progress func(sent, total int)) error {
+	return d.UploadLCDFrom(buf, slot, 0, progress)
+}
+
+// UploadLCDFrom resumes an LCD upload at a given chunk index.
+func (d *Dongle) UploadLCDFrom(buf []byte, slot uint8, startChunk int, progress func(sent, total int)) error {
 	const chunk = 28
 	total := len(buf)
 	chunks := (total + chunk - 1) / chunk
@@ -263,15 +268,37 @@ func (d *Dongle) UploadLCD(buf []byte, slot uint8, progress func(sent, total int
 		return fmt.Errorf("cabecera LCD: %w", err)
 	}
 
-	for i := 0; i < chunks; i++ {
+	if startChunk < 0 {
+		startChunk = 0
+	}
+	for i := startChunk; i < chunks; i++ {
 		start := i * chunk
 		end := start + chunk
 		if end > total {
 			end = total
 		}
 		p := newDonglePacket(0x80|byte(i>>16), byte(i), byte(i>>8), buf[start:end]...)
-		if _, err := d.exchange(p); err != nil {
-			return fmt.Errorf("chunk %d/%d: %w", i+1, chunks, err)
+		// Keep the RF link busy: a probe every few hundred chunks also acts as
+		// a cheap keep-alive.
+		if i > 0 && i%500 == 0 {
+			_, _ = d.exchange(newDonglePacket(dongleCmdProbe, 0, 0))
+		}
+
+		var lastErr error
+		for attempt := 0; attempt < 50; attempt++ {
+			if _, err := d.exchange(p); err == nil {
+				lastErr = nil
+				break
+			} else {
+				lastErr = err
+				// A missed echo is usually the keyboard dropping the RF link for
+				// a moment; poke it and retry the same chunk.
+				time.Sleep(time.Duration(20*(attempt+1)) * time.Millisecond)
+				_, _ = d.exchange(newDonglePacket(dongleCmdProbe, 0, 0))
+			}
+		}
+		if lastErr != nil {
+			return fmt.Errorf("chunk %d/%d: %w", i+1, chunks, lastErr)
 		}
 		if progress != nil && (i%64 == 0 || i == chunks-1) {
 			progress(i+1, chunks)

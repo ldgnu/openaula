@@ -201,6 +201,11 @@ func (s *Service) LCDSolid(r, g, b uint8) error {
 
 // LCDImage uploads a GIF, PNG or JPEG to the LCD.
 func (s *Service) LCDImage(r io.Reader, progress func(sent, total int)) error {
+	return s.LCDImageFrom(r, 0, progress)
+}
+
+// LCDImageFrom resumes a 2.4 GHz LCD upload at the given chunk.
+func (s *Service) LCDImageFrom(r io.Reader, startChunk int, progress func(sent, total int)) error {
 	buf, _, err := aula.BuildAnyLCDImage(r)
 	if err != nil {
 		return err
@@ -213,7 +218,7 @@ func (s *Service) LCDImage(r io.Reader, progress func(sent, total int)) error {
 			if !ok {
 				return fmt.Errorf("transporte inesperado")
 			}
-			return d.UploadLCD(raw, 1, progress)
+			return d.UploadLCDFrom(raw, 1, startChunk, progress)
 		})
 	}
 	return s.withDevice(func(d *aula.Device) error { return d.UploadLCDImage(buf, 1, progress) })

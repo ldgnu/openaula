@@ -405,12 +405,19 @@ func cmdLCD(svc *device.Service, args []string) error {
 		// Accept --yes before or after the file name.
 		file := ""
 		yes := false
-		for _, a := range args[1:] {
-			switch a {
-			case "--yes", "-yes":
+		startChunk := 0
+		rest := args[1:]
+		for i := 0; i < len(rest); i++ {
+			switch {
+			case rest[i] == "--yes" || rest[i] == "-yes":
 				yes = true
+			case rest[i] == "--start" && i+1 < len(rest):
+				i++
+				startChunk, _ = strconv.Atoi(rest[i])
+			case strings.HasPrefix(rest[i], "--start="):
+				startChunk, _ = strconv.Atoi(strings.TrimPrefix(rest[i], "--start="))
 			default:
-				file = a
+				file = rest[i]
 			}
 		}
 		if file == "" {
@@ -429,7 +436,7 @@ func cmdLCD(svc *device.Service, args []string) error {
 		progress := func(sent, total int) {
 			fmt.Fprintf(os.Stderr, "\rsubiendo %d/%d páginas", sent, total)
 		}
-		if err := svc.LCDImage(f, progress); err != nil {
+		if err := svc.LCDImageFrom(f, startChunk, progress); err != nil {
 			return err
 		}
 		fmt.Println("\nOK")
