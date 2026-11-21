@@ -116,6 +116,10 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/remap", s.handleRemap)
 	s.mux.HandleFunc("POST /api/v1/remap/reset", s.handleRemapReset)
 	s.mux.HandleFunc("POST /api/v1/clock", s.handleClock)
+	s.mux.HandleFunc("GET /api/v1/presets", s.handlePresets)
+	s.mux.HandleFunc("POST /api/v1/presets/{id}", s.handleApplyPreset)
+	s.mux.HandleFunc("GET /api/v1/os", s.handleOSProfiles)
+	s.mux.HandleFunc("POST /api/v1/os/{id}", s.handleApplyOS)
 	s.mux.HandleFunc("POST /api/v1/lcd/color", s.handleLCDColor)
 	s.mux.HandleFunc("POST /api/v1/lcd/image", s.handleLCDImage)
 
@@ -314,6 +318,47 @@ func (s *Server) handleRemapReset(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = s.store.Save(st)
 	writeJSON(w, http.StatusOK, map[string]string{"result": "reset"})
+}
+
+func (s *Server) handlePresets(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, device.Presets())
+}
+
+func (s *Server) handleApplyPreset(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	keys, err := s.svc.ApplyPreset(id, true)
+	if err != nil {
+		writeDeviceErr(w, err)
+		return
+	}
+	st, _ := s.store.Load()
+	for k, v := range keys {
+		st.Remap.Normal[k] = v
+	}
+	_ = s.store.Save(st)
+	writeJSON(w, http.StatusOK, map[string]any{"applied": id, "keys": keys})
+}
+
+func (s *Server) handleOSProfiles(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, device.OSProfiles())
+}
+
+func (s *Server) handleApplyOS(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	st, err := s.store.Load()
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err)
+		return
+	}
+	keys, err := s.svc.ApplyOSProfile(id, st.Remap.Normal)
+	if err != nil {
+		writeDeviceErr(w, err)
+		return
+	}
+	st.Remap.Normal = keys
+	st.OS = id
+	_ = s.store.Save(st)
+	writeJSON(w, http.StatusOK, map[string]any{"applied": id, "keys": keys})
 }
 
 func (s *Server) handleClock(w http.ResponseWriter, r *http.Request) {

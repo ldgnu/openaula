@@ -98,15 +98,17 @@ openaula serve --addr 127.0.0.1:8723 --idle 60s
 curl -s localhost:8723/api/v1/status
 curl -s -X POST localhost:8723/api/v1/light \
   -d '{"mode":1,"r":255,"g":0,"b":0,"brightness":5}'
-curl -s -X POST localhost:8723/api/v1/preset/fkeys
+curl -s -X POST localhost:8723/api/v1/presets/fkeys
+curl -s -X POST localhost:8723/api/v1/os/macos
 curl -s -X POST localhost:8723/api/v1/clock
 curl -s -X POST -F file=@logo.png -F confirm=true localhost:8723/api/v1/lcd/image
 ```
 
 Endpoints: `GET /api/v1/status`, `/modes`, `/keys`, `/state`, `/profiles`,
 `/health`; `PUT /state`; `POST /light`, `/off`, `/perkey`, `/remap`,
-`/remap/reset`, `/clock`, `/lcd/color`, `/lcd/image`, `/profiles/{name}`,
-`/profiles/{name}/apply`; `DELETE /profiles/{name}`.
+`/remap/reset`, `/clock`, `/presets/{id}`, `/os/{id}`, `/lcd/color`,
+`/lcd/image`, `/profiles/{name}`, `/profiles/{name}/apply`;
+`DELETE /profiles/{name}`.
 
 ## F1–F12 sin Fn
 
