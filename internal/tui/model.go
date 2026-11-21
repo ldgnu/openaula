@@ -59,9 +59,17 @@ type Model struct {
 	width  int
 	height int
 
-	status   string
-	errMsg   string
-	walMtime time.Time
+	status       string
+	errMsg       string
+	walMtime     time.Time
+	previewFrame int
+}
+
+type previewTickMsg struct{}
+
+// startPreview animates the effect preview while the lighting screen is open.
+func (m *Model) startPreview() tea.Cmd {
+	return tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg { return previewTickMsg{} })
 }
 
 // handleWalTick re-applies the palette when pywal regenerated it.
@@ -156,6 +164,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleKey(msg)
 	case walTickMsg:
 		return m.handleWalTick()
+	case previewTickMsg:
+		if m.screen != screenLighting {
+			return m, nil
+		}
+		m.previewFrame++
+		return m, m.startPreview()
 	}
 	return m, nil
 }
@@ -234,6 +248,9 @@ func (m *Model) updateMenu(key string) (tea.Model, tea.Cmd) {
 		m.screen = menuItems[m.menuIdx].screen
 		m.errMsg = ""
 		m.status = ""
+		if m.screen == screenLighting {
+			return m, m.startPreview()
+		}
 		if m.screen == screenInfo {
 			m.info = aula.Detect()
 		}

@@ -1,0 +1,23 @@
+pkgbase = openaula-bin
+	pkgdesc = TUI, CLI y API para configurar el teclado AULA/Epomaker F108 Pro (binario estático)
+	pkgver = 0.1.3
+	pkgrel = 1
+	url = https://github.com/ldgnu/openaula
+	arch = x86_64
+	arch = aarch64
+	arch = armv7h
+	arch = i686
+	license = MIT
+	conflicts = openaula
+	provides = openaula
+	options = !strip
+	source_x86_64 = openaula-bin-0.1.3-amd64.tar.gz::https://github.com/ldgnu/openaula/releases/download/v0.1.3/openaula_linux_amd64.tar.gz
+	sha256sums_x86_64 = 9a0403082856604b9909958be03496e2888ec6a2c498b95722578726c2e152d7
+	source_aarch64 = openaula-bin-0.1.3-arm64.tar.gz::https://github.com/ldgnu/openaula/releases/download/v0.1.3/openaula_linux_arm64.tar.gz
+	sha256sums_aarch64 = 3de7555804f558a8f3ed371f006e6697bda3bbccecd5ea7fc91dfa1f776b1553
+	source_armv7h = openaula-bin-0.1.3-arm.tar.gz::https://github.com/ldgnu/openaula/releases/download/v0.1.3/openaula_linux_arm.tar.gz
+	sha256sums_armv7h = 22cad51f4d0c4a99c2dc6137d0149dbf5e5bb0a21250df524368c85031ddd3a2
+	source_i686 = openaula-bin-0.1.3-386.tar.gz::https://github.com/ldgnu/openaula/releases/download/v0.1.3/openaula_linux_386.tar.gz
+	sha256sums_i686 = 837a5134b84fbfcc0eac0fccb45fd9c1cb2677a7b93f8e65fae61d6b2822848e
+
+pkgname = openaula-bin

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <maintainer type="person">
+    <email>ldgnu@users.noreply.github.com</email>
+    <name>ldgnu</name>
+  </maintainer>
+  <longdescription lang="es">
+    openaula configura el teclado AULA/Epomaker F108 Pro desde Linux: luz de
+    fondo, color por tecla, remapeos, reloj e imágenes del LCD. Incluye TUI,
+    CLI y una API HTTP/JSON local opcional. Funciona por cable USB-C y por el
+    dongle 2.4 GHz.
+  </longdescription>
+  <use>
+  </use>
+</pkgmetadata>

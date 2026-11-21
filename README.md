@@ -1,17 +1,38 @@
 # openaula
 
-Configuración del teclado **AULA / Epomaker F108 Pro** en Linux: luz de fondo,
-color por tecla, remapeo de teclas (capa normal y FN), reloj del LCD, imágenes
-en el LCD y perfiles guardables.
+Configuración del teclado **AULA / Epomaker F108 Pro** en Linux, sin depender
+del software de Windows.
 
-Es un solo binario en Go con tres formas de uso:
+Un solo binario estático en Go con tres formas de uso:
 
 - **TUI** (por defecto): menús con flechas y Enter.
 - **CLI**: un comando por acción, para scripts.
-- **API HTTP/JSON** opcional: solo si corrés `openaula serve`.
+- **API HTTP/JSON** local, opcional y con apagado por inactividad.
 
-No hay proceso residente. Cada acción abre el teclado, manda el comando y sale.
+No hay proceso residente: cada acción abre el teclado, manda el comando y sale.
 Cuando no hay nada corriendo, openaula no consume CPU, memoria ni USB.
+
+---
+
+## Funciones
+
+- **Luz de fondo**: los 20 efectos del firmware, color RGB, brillo (0-5),
+  velocidad (0-5) y dirección.
+- **Color por tecla**: editor sobre la disposición ANSI de 108 teclas, con
+  paleta y brillo propio.
+- **Remapeo de teclas**: capa normal y capa FN. Teclas, multimedia, mouse y
+  combinaciones (`ctrl+c`, `win+d`), con búsqueda por nombre.
+- **Ajustes rápidos**: `F1–F12 directos` (sin apretar Fn) y `Restaurar Enter`.
+- **Perfiles de sistema**: Windows/Linux, macOS, iPadOS/iOS, Android y neutral,
+  con compensación de modificadores.
+- **Color de pywal/wallust**: aplicar el acento del escritorio, siguiendo los
+  cambios de paleta si activás la opción.
+- **Reloj del LCD** y **subida de imágenes** (GIF animado, PNG o JPEG).
+- **Perfiles**: guardar y aplicar configuraciones completas.
+- **Batería y firmware**: nivel de batería por 2.4 GHz y versión desde
+  `bcdDevice`.
+
+---
 
 ## Estado del soporte
 
@@ -24,43 +45,70 @@ Cuando no hay nada corriendo, openaula no consume CPU, memoria ni USB.
 | Reloj del LCD | sí | sí |
 | Imagen en el LCD | sí | experimental |
 
-Cuando están los dos conectados se usa el cable. Bluetooth no permite
-configuración, igual que en el software oficial.
+Cuando están los dos conectados se usa el cable. **Bluetooth no permite
+configuración**, igual que en el software oficial de Aula.
 
-El canal 2.4 GHz no es el mismo protocolo que el cable: usa paquetes de 32 bytes
-con checksum y sin transacción begin/apply. Está documentado en
-`docs/PROTOCOLO.md`.
+La configuración se aplica al firmware del teclado: podés configurar por cable
+y después usar 2.4 GHz o Bluetooth con los mismos ajustes.
 
-La subida de imágenes por 2.4 GHz existe en el firmware pero el software oficial
-la oculta; puede tardar minutos y no está verificada. Si algo sale mal, probá
-por cable.
+---
 
 ## Instalación
 
-Un comando, cualquier distribución, sin dependencias (el binario es estático):
+### Cualquier distribución (binario estático)
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/ldgnu/openaula/main/install.sh | sh
 ```
 
-El instalador detecta la arquitectura, baja el binario del último release (o
-compila si no hay build para tu arquitectura), lo instala en `/usr/local/bin` y
-deja la regla udev con el grupo correcto (`usb`, `plugdev` o `input` según lo que
-exista en el sistema).
+El instalador:
 
-Si preferís compilar: solo necesitás Go, sin cgo ni libusb.
+- detecta la arquitectura (x86_64, aarch64, armv7, i386),
+- baja el binario del último release o compila si no hay build,
+- lo instala en `/usr/local/bin` (o `~/.local/bin` sin root),
+- escribe la regla udev con el grupo que exista (`usb`, `plugdev` o `input`),
+- avisa si tu usuario tiene que sumarse a ese grupo.
+
+Variables: `VERSION`, `PREFIX`, `FROM_SOURCE=1`, `NO_SUDO=1`.
+
+### Arch Linux (AUR)
+
+```sh
+# compilando desde fuente
+yay -S openaula
+
+# o el binario del release
+yay -S openaula-bin
+```
+
+Los `PKGBUILD` están en `packaging/aur/`.
+
+### Gentoo
+
+Overlay local o GURU, según `docs/EMPAQUETADO.md`. La vía rápida es el binario:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ldgnu/openaula/main/install.sh | sh
+```
+
+### Desde el código
+
+Solo hace falta Go. No hay cgo ni libusb.
 
 ```bash
-make build          # genera ./openaula
-sudo make install   # copia a /usr/local/bin
-sudo make udev      # regla udev para no necesitar root
+make build          # ./openaula
+sudo make install   # /usr/local/bin
+sudo make udev      # regla udev
 ```
+
+---
 
 ## Uso
 
 ```bash
 openaula            # TUI
 openaula status     # estado del dispositivo
+openaula help       # lista completa
 ```
 
 ### TUI
@@ -68,35 +116,50 @@ openaula status     # estado del dispositivo
 Flechas para mover, izquierda/derecha para cambiar un valor, Enter para actuar,
 Esc para volver. Cada pantalla muestra sus teclas abajo, sin atajos ocultos.
 
-Menú:
-
-- **Luz de fondo**: 20 efectos, color RGB, brillo, velocidad y dirección.
-- **Color por tecla**: editor sobre la disposición ANSI de 108 teclas.
-- **Remapear teclas**: capa normal o FN, con búsqueda por nombre.
-- **Ajustes rápidos**: F1–F12 directos, restaurar Enter.
-- **Sistema operativo**: Windows/Linux, macOS, iPadOS/iOS, Android.
-- **Reloj del LCD**, **Pantalla del LCD**, **Perfiles**, **Estado**.
+| Pantalla | Qué hace |
+| --- | --- |
+| Luz de fondo | Modo, color, brillo, velocidad, dirección, aplicar, apagar |
+| Color por tecla | Grilla de 108 teclas, Enter pinta, Espacio borra, `c` color, `a` aplica |
+| Remapear teclas | Capa normal o FN, origen y destino con búsqueda |
+| Ajustes rápidos | F1–F12 directos, restaurar Enter |
+| Sistema operativo | Windows/Linux, macOS, iPadOS/iOS, Android, neutral |
+| Color de pywal | Elegir acento, activar el seguimiento automático |
+| Reloj del LCD | Sincronizar con la hora del sistema |
+| Pantalla del LCD | Color sólido, subir imagen, reloj |
+| Perfiles | Guardar, aplicar y borrar configuraciones |
+| Estado | Conexión, VID:PID, firmware, batería, interfaces |
 
 ### CLI
 
 ```bash
 openaula light --mode 1 --color 255,0,0 --brightness 5   # rojo estático
 openaula light --mode 7 --color 0,0,255 --speed 3       # respirar azul
+openaula light --mode 6 --colorful                      # arcoíris
 openaula off                                            # apagar
 openaula preset fkeys                                   # F1..F12 sin Fn
 openaula preset enter                                   # restaurar Intro
+openaula preset --list                                  # ver presets
 openaula os macos                                       # modificadores para macOS
+openaula os                                             # perfil actual
 openaula perkey --all 0,0,40 w=0,255,0 a=0,255,0        # WASD verde
-openaula remap capslock=lctrl f1=media:play --layer normal
+openaula perkey --apply                                 # reaplicar lo guardado
+openaula remap capslock=lctrl f1=media:play             # capa normal
+openaula remap --layer fn f1=media:volup                # capa FN
+openaula remap --reset                                  # borrar remapeos
 openaula clock                                          # reloj del LCD
 openaula lcd color 255,0,0                              # LCD rojo
-openaula lcd image logo.png --yes                       # PNG, GIF o JPEG
-openaula lcd image logo.gif --yes --start 14346         # reanudar una subida cortada
+openaula lcd image logo.gif --yes                        # GIF, PNG o JPEG
+openaula lcd image logo.gif --yes --start 14346          # reanudar subida
+openaula wal --index 4                                  # color de pywal
+openaula wal --watch                                    # seguir cambios
+openaula battery                                        # batería (2.4 GHz)
+openaula keys                                           # nombres de teclas
+openaula modes                                          # modos de luz
 ```
 
 ### API
 
-Es opt-in y se puede apagar sola por inactividad:
+Opt-in, y se apaga sola si la configurás con `--idle`:
 
 ```bash
 openaula serve --addr 127.0.0.1:8723 --idle 60s
@@ -106,55 +169,174 @@ openaula serve --addr 127.0.0.1:8723 --idle 60s
 curl -s localhost:8723/api/v1/status
 curl -s -X POST localhost:8723/api/v1/light \
   -d '{"mode":1,"r":255,"g":0,"b":0,"brightness":5}'
+curl -s -X POST localhost:8723/api/v1/perkey \
+  -d '{"brightness":5,"colors":{"w":[0,255,0],"a":[0,255,0]}}'
 curl -s -X POST localhost:8723/api/v1/presets/fkeys
 curl -s -X POST localhost:8723/api/v1/os/macos
 curl -s -X POST localhost:8723/api/v1/clock
+curl -s -X POST localhost:8723/api/v1/wal -d '{"index":4}'
 curl -s -X POST -F file=@logo.png -F confirm=true localhost:8723/api/v1/lcd/image
+curl -s localhost:8723/api/v1/profiles
+curl -s -X POST localhost:8723/api/v1/profiles/noche/apply
 ```
 
-Endpoints: `GET /api/v1/status`, `/modes`, `/keys`, `/state`, `/profiles`,
-`/health`; `PUT /state`; `POST /light`, `/off`, `/perkey`, `/remap`,
-`/remap/reset`, `/clock`, `/presets/{id}`, `/os/{id}`, `/lcd/color`,
-`/lcd/image`, `/profiles/{name}`, `/profiles/{name}/apply`;
-`DELETE /profiles/{name}`.
+| Método | Ruta | Uso |
+| --- | --- | --- |
+| GET | `/api/v1/status` | dispositivo, firmware, batería y configuración guardada |
+| GET | `/api/v1/modes` | modos de luz y qué parámetros acepta cada uno |
+| GET | `/api/v1/keys` | teclas con fila, columna y ancho |
+| GET/PUT | `/api/v1/state` | configuración deseada |
+| POST | `/api/v1/light` | luz de fondo |
+| POST | `/api/v1/off` | apagar luz |
+| POST | `/api/v1/perkey` | color por tecla |
+| POST | `/api/v1/remap` | remapeos (`layer` normal o fn) |
+| POST | `/api/v1/remap/reset?layer=fn` | borrar capa |
+| POST | `/api/v1/presets/{id}` | preset de remapeo |
+| POST | `/api/v1/os/{id}` | perfil de sistema |
+| POST | `/api/v1/clock` | sincronizar reloj |
+| POST | `/api/v1/lcd/color` | color sólido |
+| POST | `/api/v1/lcd/image` | imagen (multipart, `confirm=true`) |
+| GET/POST | `/api/v1/wal` | paleta de pywal y aplicar acento |
+| GET/POST/DELETE | `/api/v1/profiles[/{name}]` | perfiles |
+| GET | `/api/v1/health` | vida del server |
+
+---
+
+## Configuración persistente
+
+El teclado **no se puede leer**: el protocolo es write-only. openaula guarda lo
+último aplicado en:
+
+```
+~/.config/openaula/state.json      # configuración deseada
+~/.config/openaula/profiles/*.json # perfiles
+```
+
+Ese archivo es la fuente de verdad. Si aplicás algo desde otra herramienta, el
+estado local queda desactualizado; reaplicá desde openaula para sincronizar.
+
+---
 
 ## F1–F12 sin Fn
 
 El firmware arranca con la fila F en modo multimedia: F1..F12 mandan
-volumen/play/etc. y las teclas de función quedan detrás de Fn. El preset
-`fkeys` remapea la capa normal para que F1..F12 manden sus códigos HID reales;
-los atajos multimedia siguen en Fn+F1..F12.
+volumen/play/etc. y las teclas de función quedan detrás de Fn.
 
-## Teclas que no responden
+`openaula preset fkeys` remapea la capa normal para que F1..F12 manden sus
+códigos HID reales. Los atajos multimedia siguen disponibles en Fn+F1..F12.
 
-Si Intro no hace nada, probá `openaula preset enter`, que fuerza Enter
-(HID `0x28`) en la capa normal. Si tampoco así responde, el problema es del
-firmware o del switch, no del remapeo.
+Si además querés multimedia en la capa FN sin perder nada, se puede remapear esa
+capa aparte:
 
-## Lo que el protocolo no permite
+```bash
+openaula remap --layer fn f1=media:volup f2=media:voldown f3=media:mute
+```
 
-- No se puede **leer** la configuración actual del teclado: luz, colores por
-  tecla, remapeos y versión de firmware no son consultables. openaula guarda lo
-  último aplicado en `~/.config/openaula/state.json` y lo usa como referencia.
-- No se puede poner el teclado en modo Mac/Windows/iOS/Android por software: eso
-  lo decide el firmware con FN+Q/W/E/R. Los perfiles de sistema de openaula
-  compensan los modificadores por remapeo.
-- El control del LCD no expone el brillo ni el contraste de la pantalla.
-- La barra de luz superior y las tiras laterales solo se manejan con combos FN
-  del teclado; el firmware acepta comandos pero no los aplica.
+## Si Intro no responde
 
-## Cuidado con el LCD
+`openaula preset enter` fuerza Enter (HID `0x28`) en la capa normal. Si tampoco
+así responde, el problema es firmware o switch, no remapeo.
 
-Subir imágenes puede dañar de forma permanente los gráficos internos del menú
-del teclado. openaula bloquea GIFs de más de 141 cuadros y pide confirmación
-explícita (`--yes` o `confirm=true`). Los colores sólidos usan el mismo
-generador y son la opción segura.
+Ojo: el Enter del teclado numérico manda otra secuencia en algunos terminales y
+hay aplicaciones que solo escuchan el Enter principal. La TUI de openaula acepta
+las dos.
 
-El LCD es de 240x135. Las imágenes estáticas se escalan manteniendo proporción
-y se centran sobre fondo negro.
+---
+
+## Color de pywal
+
+La opción lee la paleta de:
+
+- `~/.cache/wal/colors.json` (pywal)
+- `~/.cache/wallust/colors.json` (wallust)
+- `~/.cache/wal/colors` (formato plano)
+
+En la TUI, la fila `Seguir color de pywal al iniciar` activa la opción. Con la
+opción activa, al abrir openaula aplica el acento y revisa cada 5 segundos si la
+paleta cambió. Desactivada, no hay ningún chequeo.
+
+Por CLI: `openaula wal --follow`, y `openaula wal --watch` para dejarlo
+siguiendo en segundo plano.
+
+---
+
+## Pantalla del LCD
+
+- Resolución 240x135, color RGB565.
+- Acepta GIF animado, PNG y JPEG. Las imágenes estáticas se escalan manteniendo
+  proporción y se centran sobre fondo negro.
+- Límite seguro: **141 cuadros**. openaula bloquea anything más grande.
+- Cada cuadro pesa ~64 KB; la subida por 2.4 GHz tarda unos 11 segundos por
+  cuadro y el enlace se corta si el teclado entra en suspensión. Por cable tarda
+  segundos.
+- Si una subida se corta, `--start N` retoma desde el chunk indicado.
+
+**Advertencia**: subir imágenes puede dañar de forma permanente los gráficos
+internos del menú del teclado. Los colores sólidos son la opción segura, y el
+límite de cuadros existe por eso.
+
+Generador de animaciones incluido:
+
+```bash
+go run ./tools/lcdgen -logo logo.png -out out.gif \
+  -tag LDGNU -sub "Lawless Disorder" \
+  -line1 "if it moves," -line2 "compile it" \
+  -frames 8 -delay 750
+```
+
+---
+
+## Limitaciones conocidas
+
+- **No se puede leer** la configuración actual: luz, colores, remapeos ni
+  versión de firmware no son consultables. El firmware se deduce de `bcdDevice`
+  (`0x0138` → `138`).
+- **El modo de sistema** (Windows/Mac/iOS/Android) lo decide el firmware con
+  FN+Q/W/E/R. Los perfiles de openaula compensan modificadores por remapeo.
+- **La barra de luz y las tiras laterales** solo se manejan con combos FN; el
+  firmware acepta comandos pero no los aplica.
+- **El teclado se suspende**: durante una subida larga por 2.4 GHz deja de
+  responder al canal vendor. Los reintentos esperan hasta ~5 minutos, pero si
+  no hay actividad de teclas conviene subir por cable.
+- **El dongle no tolera paquetes mal formados**: el protocolo 2.4 GHz lleva
+  checksum en el byte 31. Mandar paquetes sin checksum puede colgar el receptor
+  hasta desconectarlo.
+
+---
+
+## Desarrollo
+
+```
+cmd/openaula        CLI y entrada principal
+internal/aula       protocolo HID: cable (feature reports) y dongle (32 bytes)
+internal/hidraw     acceso a /dev/hidraw
+internal/device     operaciones de alto nivel, presets y perfiles de sistema
+internal/state      configuración persistente y perfiles
+internal/api        servidor HTTP/JSON
+internal/tui        interfaz de terminal
+internal/wal        lectura de paletas de pywal/wallust
+tools/lcdgen        generador de animaciones para el LCD
+packaging/          udev, systemd, AUR y Gentoo
+docs/PROTOCOLO.md   protocolo documentado
+```
+
+```bash
+make build
+make test
+make vet
+```
+
+El protocolo está documentado en `docs/PROTOCOLO.md`. El proyecto tiene tests
+del framing, del checksum y del generador de imágenes.
+
+---
 
 ## Créditos y licencia
 
-El protocolo HID fue reversado por Parsia en
-[parsiya/f108-pro](https://github.com/parsiya/f108-pro) (MIT). `internal/aula`
-deriva de ese trabajo; ver `NOTICE.md`. Licencia MIT.
+El camino cableado fue reversado por Parsia
+([parsiya/f108-pro](https://github.com/parsiya/f108-pro), MIT). El camino
+2.4 GHz está documentado por kidush
+([omarchy-aula-f108pro](https://github.com/kidush/omarchy-aula-f108pro), MIT) a
+partir del driver oficial.
+
+Licencia MIT. Ver `LICENSE` y `NOTICE.md`.

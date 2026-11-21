@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/ldgnu/openaula/internal/state"
 )
 
@@ -243,7 +244,21 @@ func (m *Model) viewLighting() string {
 			b.WriteString("   " + label + "\n")
 		}
 	}
-	return b.String()
+
+	right := m.renderPreview()
+	return lipgloss.JoinHorizontal(lipgloss.Top, b.String(), "    ", right)
+}
+
+// renderPreview draws the animated approximation of the selected effect.
+func (m *Model) renderPreview() string {
+	var out strings.Builder
+	out.WriteString(dimStyle.Render("vista previa") + "\n\n")
+	for _, row := range previewFrame(m.previewFrame, &m.light) {
+		out.WriteString(row + "\n")
+	}
+	// Leyenda del efecto.
+	out.WriteString("\n" + dimStyle.Render(modeName(m.light.mode)))
+	return out.String()
 }
 
 func directionName(d uint8) string {
