@@ -270,8 +270,8 @@ corrés, no hay nada de fondo.
 # Destello puntual, para usar desde cualquier hook
 openaula flash --color 0,255,0 --duration 200ms
 
-# Vigilar notificaciones y volumen
-openaula watch --notifications --volume
+# Vigilar notificaciones, volumen y batería
+openaula watch --notifications --volume --battery
 ```
 
 `watch` escucha:
@@ -281,6 +281,10 @@ openaula watch --notifications --volume
 - **Volumen**: cambios en el sink por defecto vía `pactl subscribe`, con
   `wpctl` o `pactl` para leer el nivel. Verde al subir (`--vol-up`) y rojo al
   bajar (`--vol-down`).
+- **Batería**: consulta el nivel por 2.4 GHz cada minuto. Si baja del umbral
+  (`--battery-threshold`, 15% por defecto) hace cuatro destellos rojos y manda
+  una notificación de escritorio. Repite el aviso cada 10 minutos. Por cable no
+  hay lectura de batería, así que simplemente no avisa.
 
 Después del destello vuelve a la configuración guardada. Los eventos seguidos se
 agrupan con un debounce de 120 ms.

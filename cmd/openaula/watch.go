@@ -23,6 +23,13 @@ type flasher struct {
 	duration time.Duration
 }
 
+// burst flashes the keyboard n times, for alerts that must not be missed.
+func (f *flasher) burst(c [3]uint8, n int) {
+	for i := 0; i < n; i++ {
+		f.flash(c)
+	}
+}
+
 func (f *flasher) flash(c [3]uint8) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -66,7 +73,8 @@ func parseRGB(s string) ([3]uint8, error) {
 }
 
 // runWatch listens for system events and flashes the keyboard.
-func runWatch(f *flasher, notifications bool, notifColor [3]uint8, volume bool, up, down [3]uint8) error {
+func runWatch(f *flasher, notifications bool, notifColor [3]uint8, volume bool, up, down [3]uint8,
+	battery bool, threshold int, interval time.Duration, lowColor [3]uint8) error {
 	events := make(chan [3]uint8, 8)
 
 	if notifications {
@@ -75,8 +83,11 @@ func runWatch(f *flasher, notifications bool, notifColor [3]uint8, volume bool, 
 	if volume {
 		go watchVolume(events, up, down)
 	}
-	if !notifications && !volume {
-		return fmt.Errorf("elegí al menos un evento: --notifications y/o --volume")
+	if battery {
+		go watchBattery(f, threshold, interval, lowColor)
+	}
+	if !notifications && !volume && !battery {
+		return fmt.Errorf("elegí al menos un evento: --notifications, --volume o --battery")
 	}
 
 	// Debounce: burst of events produce a single flash.
@@ -145,6 +156,46 @@ func watchVolume(out chan<- [3]uint8, up, down [3]uint8) {
 		}
 		last = v
 	}
+}
+
+// watchBattery polls the battery over 2.4 GHz and alerts when it is low.
+func watchBattery(f *flasher, threshold int, interval time.Duration, color [3]uint8) {
+	alerted := time.Time{}
+	for {
+		pct, ok := batteryLevel()
+		if ok && pct <= threshold {
+			// Re-alert after 10 minutes, or when the level changes.
+			if time.Since(alerted) > 10*time.Minute {
+				alerted = time.Now()
+				notify("Batería del teclado", fmt.Sprintf("Queda %d%%, cargalo", pct))
+				f.burst(color, 4)
+			}
+		} else if ok && pct > threshold {
+			alerted = time.Time{}
+		}
+		time.Sleep(interval)
+	}
+}
+
+// batteryLevel reads the dongle battery. It fails on USB-C (charging), which
+// is fine: we simply skip the check.
+func batteryLevel() (int, bool) {
+	d, err := dongleOpen()
+	if err != nil {
+		return 0, false
+	}
+	defer d.Close()
+	pct, err := d.Battery()
+	if err != nil {
+		return 0, false
+	}
+	return pct, true
+}
+
+// notify sends a desktop notification when notify-send exists.
+func notify(title, body string) {
+	cmd := exec.Command("notify-send", "-a", "openaula", title, body)
+	_ = cmd.Run()
 }
 
 // currentVolume returns the default sink volume as a percentage, or -1.

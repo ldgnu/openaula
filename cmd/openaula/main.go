@@ -255,6 +255,10 @@ func cmdWatch(svc *device.Service, store *state.Store, args []string) error {
 	up := fs.String("vol-up", "0,255,0", "color al subir el volumen")
 	down := fs.String("vol-down", "255,0,0", "color al bajar el volumen")
 	duration := fs.Duration("duration", 150*time.Millisecond, "duración del destello")
+	battery := fs.Bool("battery", false, "avisar cuando la batería esté baja")
+	threshold := fs.Int("battery-threshold", 15, "porcentaje para avisar")
+	interval := fs.Duration("battery-interval", time.Minute, "cada cuánto consultar la batería")
+	lowColor := fs.String("battery-color", "255,0,0", "color del aviso de batería")
 	_ = fs.Parse(args)
 
 	base, err := parseRGB(*color)
@@ -270,9 +274,15 @@ func cmdWatch(svc *device.Service, store *state.Store, args []string) error {
 		return err
 	}
 
+	lowCol, err := parseRGB(*lowColor)
+	if err != nil {
+		return err
+	}
+
 	f := &flasher{svc: svc, store: store, duration: *duration}
 	fmt.Fprintln(os.Stderr, "openaula watch: esperando eventos (Ctrl+C para salir)")
-	return runWatch(f, *notifications, base, *volume, upColor, downColor)
+	return runWatch(f, *notifications, base, *volume, upColor, downColor,
+		*battery, *threshold, *interval, lowCol)
 }
 
 func cmdWal(svc *device.Service, store *state.Store, args []string) error {
