@@ -16,8 +16,8 @@ import (
 	"github.com/ldgnu/openaula/internal/state"
 )
 
-// ErrNotConfigured means a 2.4 GHz dongle was found but no wired keyboard.
-var ErrNotConfigured = fmt.Errorf("keyboard not connected via USB-C; configuration over the 2.4 GHz dongle is not supported")
+// ErrNotConfigured means no keyboard with a usable channel was found.
+var ErrNotConfigured = fmt.Errorf("no encontré el teclado: conectalo por USB-C o poné el dongle 2.4 GHz")
 
 // Service serializes access to the single keyboard.
 type Service struct {
@@ -34,34 +34,73 @@ func (s *Service) Status(store *state.Store) (Status, error) {
 		return Status{}, err
 	}
 	info := aula.Detect()
-	return Status{
+	stt := Status{
 		Device:   info,
 		Settings: st,
-		Writable: info.Transport == aula.ConnUSB,
-	}, nil
+		Writable: info.Transport.IsConfigurable(),
+	}
+	if info.Transport == aula.Conn24G {
+		if d, err := aula.OpenDongle(); err == nil {
+			if pct, err := d.Battery(); err == nil {
+				stt.Battery = pct
+				stt.HasBattery = true
+			}
+			d.Close()
+		}
+	}
+	return stt, nil
 }
 
 // Status is the payload returned by GET /api/v1/status.
 type Status struct {
-	Device   aula.Info      `json:"device"`
-	Settings state.Settings `json:"settings"`
-	Writable bool           `json:"writable"`
+	Device     aula.Info      `json:"device"`
+	Settings   state.Settings `json:"settings"`
+	Writable   bool           `json:"writable"`
+	Battery    int            `json:"battery,omitempty"`
+	HasBattery bool           `json:"has_battery"`
 }
 
-// withDevice opens the wired keyboard, runs fn and closes it.
-func (s *Service) withDevice(fn func(*aula.Device) error) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
+// openConfig returns a configurator for whichever transport is connected.
+func (s *Service) openConfig() (aula.Configurator, func(), error) {
 	info := aula.Detect()
 	switch info.Transport {
 	case aula.ConnUSB:
+		dev, err := aula.Open()
+		if err != nil {
+			return nil, nil, err
+		}
+		return dev, dev.Close, nil
 	case aula.Conn24G:
-		return ErrNotConfigured
+		d, err := aula.OpenDongle()
+		if err != nil {
+			return nil, nil, err
+		}
+		return d, d.Close, nil
 	default:
-		return fmt.Errorf("keyboard not found")
+		return nil, nil, fmt.Errorf("teclado no encontrado")
 	}
+}
 
+// withConfig opens the keyboard (cable or dongle), runs fn and closes it.
+func (s *Service) withConfig(fn func(aula.Configurator) error) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	c, closeFn, err := s.openConfig()
+	if err != nil {
+		return err
+	}
+	defer closeFn()
+	return fn(c)
+}
+
+// withDevice runs fn on the wired keyboard only.
+func (s *Service) withDevice(fn func(*aula.Device) error) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	info := aula.Detect()
+	if info.Transport != aula.ConnUSB {
+		return fmt.Errorf("esta función necesita el cable USB-C")
+	}
 	dev, err := aula.Open()
 	if err != nil {
 		return err
@@ -85,7 +124,7 @@ func (s *Service) ApplyLighting(l state.Lighting) error {
 		Direction:  l.Direction,
 		Colorful:   l.Colorful,
 	}
-	return s.withDevice(func(d *aula.Device) error { return d.SetLighting(cfg) })
+	return s.withConfig(func(d aula.Configurator) error { return d.SetLighting(cfg) })
 }
 
 // ApplyPerKey sends a per-key RGB layout. Keys missing from the map are off.
@@ -102,7 +141,7 @@ func (s *Service) ApplyPerKey(pk state.PerKey) error {
 	if brightness > 5 {
 		brightness = 5
 	}
-	return s.withDevice(func(d *aula.Device) error { return d.SetPerKeyRGB(keys, brightness) })
+	return s.withConfig(func(d aula.Configurator) error { return d.SetPerKeyRGB(keys, brightness) })
 }
 
 // ApplyRemap sends the normal and/or FN remap tables.
@@ -129,7 +168,7 @@ func (s *Service) ApplyRemap(layer string, entries map[string]string) error {
 		return fmt.Errorf("unknown layer %q (use normal or fn)", layer)
 	}
 
-	return s.withDevice(func(d *aula.Device) error {
+	return s.withConfig(func(d aula.Configurator) error {
 		if fn {
 			return d.SetFnKeyRemap(remaps)
 		}
@@ -140,7 +179,7 @@ func (s *Service) ApplyRemap(layer string, entries map[string]string) error {
 // ResetRemap clears a remap layer.
 func (s *Service) ResetRemap(layer string) error {
 	fn := strings.EqualFold(layer, "fn")
-	return s.withDevice(func(d *aula.Device) error {
+	return s.withConfig(func(d aula.Configurator) error {
 		if fn {
 			return d.ResetFnKeyRemap()
 		}
@@ -151,7 +190,7 @@ func (s *Service) ResetRemap(layer string) error {
 // SyncClock sets the LCD clock to the current local time.
 func (s *Service) SyncClock() error {
 	now := time.Now()
-	return s.withDevice(func(d *aula.Device) error { return d.SyncClock(now) })
+	return s.withConfig(func(d aula.Configurator) error { return d.SyncClock(now) })
 }
 
 // LCDSolid fills the LCD with a solid color.

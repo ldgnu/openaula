@@ -1,9 +1,5 @@
 package aula
 
-import (
-	"github.com/google/gousb"
-)
-
 // Conn identifies how the keyboard is currently reachable.
 type Conn string
 
@@ -44,72 +40,25 @@ type Info struct {
 // Detect scans the USB bus for a wired F108 Pro or its 2.4 GHz dongle.
 // A wired keyboard always wins over the dongle.
 func Detect() Info {
-	ctx := gousb.NewContext()
-	defer ctx.Close()
-
-	devs, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
-		return isF108(desc)
-	})
-	if err != nil {
-		return Info{Transport: ConnNone}
+	if info, ok := detectPlatform(VendorID, ProductID); ok {
+		info.Transport = ConnUSB
+		info.CanConfigure = true
+		return info
 	}
-	defer func() {
-		for _, d := range devs {
-			d.Close()
-		}
-	}()
-
-	var usbInfo, dongleInfo *Info
-	for _, d := range devs {
-		desc := d.Desc
-		info := Info{
-			Connected:     true,
-			VID:           uint16(desc.Vendor),
-			PID:           uint16(desc.Product),
-			Bus:           desc.Bus,
-			Address:       desc.Address,
-			BCDDevice:     uint16(desc.Device),
-			NumInterfaces: len(desc.Configs[1].Interfaces),
-		}
-		if s, err := d.Product(); err == nil {
-			info.Product = s
-		}
-		if s, err := d.Manufacturer(); err == nil {
-			info.Manufacturer = s
-		}
-		if s, err := d.SerialNumber(); err == nil {
-			info.Serial = s
-		}
-
-		if desc.Vendor == gousb.ID(VendorID) && desc.Product == gousb.ID(ProductID) {
-			info.Transport = ConnUSB
-			info.CanConfigure = true
-			usbInfo = &info
-		} else {
-			info.Transport = Conn24G
-			if info.Product == "" {
-				info.Product = "F108Pro Dongle"
-			}
-			dongleInfo = &info
-		}
+	if info, ok := detectDongle(); ok {
+		return info
 	}
-
-	switch {
-	case usbInfo != nil:
-		return *usbInfo
-	case dongleInfo != nil:
-		return *dongleInfo
-	default:
-		return Info{Transport: ConnNone}
-	}
+	return Info{Transport: ConnNone}
 }
 
-func isF108(desc *gousb.DeviceDesc) bool {
-	if desc.Vendor == gousb.ID(VendorID) && desc.Product == gousb.ID(ProductID) {
-		return true
+// FirmwareVersion returns the firmware number the vendor UI shows, derived
+// from bcdDevice (0x0120 -> "120").
+func (i Info) FirmwareVersion() string {
+	if i.BCDDevice == 0 {
+		return ""
 	}
-	return desc.Vendor == gousb.ID(DongleVendorID) && desc.Product == gousb.ID(DongleProductID)
+	return FirmwareFromBCD(i.BCDDevice)
 }
 
 // IsConfigurable reports whether the given connection supports configuration.
-func (c Conn) IsConfigurable() bool { return c == ConnUSB }
+func (c Conn) IsConfigurable() bool { return c == ConnUSB || c == Conn24G }
