@@ -161,7 +161,7 @@ func keyCell(k aula.LayoutKey, c state.RGB, selected bool) string {
 			Background(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", c[0], c[1], c[2]))).
 			Foreground(autoContrast(set))
 	} else {
-		st = st.Foreground(lipgloss.Color("244"))
+		st = st.Foreground(lipgloss.AdaptiveColor{Light: "238", Dark: "244"})
 	}
 	if selected {
 		st = st.Reverse(true)

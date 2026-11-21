@@ -1,6 +1,6 @@
 # Maintainer: ldgnu <ldgnu@users.noreply.github.com>
 pkgname=openaula-bin
-pkgver=0.1.5
+pkgver=0.1.8
 pkgrel=1
 pkgdesc="TUI, CLI y API para configurar el teclado AULA/Epomaker F108 Pro (binario estático)"
 arch=('x86_64' 'aarch64' 'armv7h' 'i686')

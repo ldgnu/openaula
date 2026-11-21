@@ -107,14 +107,18 @@ func walModTime() time.Time {
 	return fi.ModTime()
 }
 
+// AdaptiveColor keeps the UI readable on both dark and light terminals.
 var (
-	titleStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("205"))
-	sectionStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("86"))
-	dimStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	selStyle     = lipgloss.NewStyle().Background(lipgloss.Color("57")).Foreground(lipgloss.Color("230"))
-	errStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
-	okStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("82"))
-	keyStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("250"))
+	titleStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.AdaptiveColor{Light: "90", Dark: "205"})
+	sectionStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.AdaptiveColor{Light: "23", Dark: "86"})
+	dimStyle     = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "240", Dark: "245"})
+	selStyle     = lipgloss.NewStyle().
+			Background(lipgloss.AdaptiveColor{Light: "183", Dark: "57"}).
+			Foreground(lipgloss.AdaptiveColor{Light: "232", Dark: "230"}).
+			Bold(true)
+	errStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "124", Dark: "196"})
+	okStyle  = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "28", Dark: "82"})
+	keyStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "250"})
 )
 
 // New creates the TUI model.
