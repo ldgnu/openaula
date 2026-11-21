@@ -27,6 +27,10 @@ jobs:
             tar -C dist/pkg -czf "dist/$out.tar.gz" openaula
             rm -rf "dist/pkg"
           done
+          # Tarball de dependencias para el ebuild de Gentoo (go mod vendor).
+          go mod vendor
+          tar -czf "dist/openaula-${GITHUB_REF_NAME#v}-vendor.tar.gz" vendor
+          rm -rf vendor
           cd dist && sha256sum *.tar.gz > checksums.txt
       - uses: softprops/action-gh-release@v2
         with:

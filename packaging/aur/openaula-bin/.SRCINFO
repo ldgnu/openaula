@@ -12,12 +12,12 @@ pkgbase = openaula-bin
 	provides = openaula
 	options = !strip
 	source_x86_64 = openaula-bin-0.1.5-amd64.tar.gz::https://github.com/ldgnu/openaula/releases/download/v0.1.5/openaula_linux_amd64.tar.gz
-	sha256sums_x86_64 = fb2bd13a6bd08eaec427937c61ef8de9808c07533fc79e4518c00498b78befdc
+	sha256sums_x86_64 = a895a716c5736d61c4c8f4eae068f7a8a57d1edd65fef66a467c7a70e4f5c31c
 	source_aarch64 = openaula-bin-0.1.5-arm64.tar.gz::https://github.com/ldgnu/openaula/releases/download/v0.1.5/openaula_linux_arm64.tar.gz
-	sha256sums_aarch64 = 7e79166d28b1e5910d03a3d84e316584613d53d026c56554ee2ccb114cb2a62b
+	sha256sums_aarch64 = 045459d084f3aa4b58bd9ff477c7378d0aa7b9258fa5401af6a2655680d4e663
 	source_armv7h = openaula-bin-0.1.5-arm.tar.gz::https://github.com/ldgnu/openaula/releases/download/v0.1.5/openaula_linux_arm.tar.gz
-	sha256sums_armv7h = 7a7d1414561038c1133d87f1b6e9a31d73e365a8da8327208d77d1234bba15b5
+	sha256sums_armv7h = 3e2be06c760138875a950cf5abd8b4d92794d2ca1911f4454eda1e20a1bc22f5
 	source_i686 = openaula-bin-0.1.5-386.tar.gz::https://github.com/ldgnu/openaula/releases/download/v0.1.5/openaula_linux_386.tar.gz
-	sha256sums_i686 = dda4b12097073de13b000747ab487dbae01379e69cff8a461eb7e672bc52e263
+	sha256sums_i686 = eb5947eb001e6e49e57350ca7de173d486ae4ebdc5ef9547fe0bf392e16c45f9
 
 pkgname = openaula-bin
