@@ -307,7 +307,7 @@ func (m *Model) deviceBadge() string {
 	case aula.ConnUSB:
 		return okStyle.Render("USB-C conectado")
 	case aula.Conn24G:
-		return errStyle.Render("solo dongle 2.4G — configurar por cable USB-C")
+		return okStyle.Render("dongle 2.4 GHz")
 	default:
 		return errStyle.Render("sin teclado")
 	}

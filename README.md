@@ -12,6 +12,12 @@ Un solo binario estático en Go con tres formas de uso:
 No hay proceso residente: cada acción abre el teclado, manda el comando y sale.
 Cuando no hay nada corriendo, openaula no consume CPU, memoria ni USB.
 
+> **Probado únicamente en el AULA F108 Pro ANSI de 108 teclas con firmware
+> `0x0138`.** No se probó en otros modelos, en la variante ISO, en los rebrand
+> de AJAZZ/Epomaker/Alma ni en otras versiones de firmware. Si tu teclado tiene
+> otro VID/PID, openaula no lo va a detectar. Ver
+> [Compatibilidad](#compatibilidad).
+
 ---
 
 ## Funciones
@@ -31,6 +37,52 @@ Cuando no hay nada corriendo, openaula no consume CPU, memoria ni USB.
 - **Perfiles**: guardar y aplicar configuraciones completas.
 - **Batería y firmware**: nivel de batería por 2.4 GHz y versión desde
   `bcdDevice`.
+
+## Capturas
+
+Los prints salen de la propia TUI con datos de demostración (`tools/shots`).
+
+**Menú principal**
+
+![Menú principal](docs/img/menu.png)
+
+**Luz de fondo, con vista previa animada del efecto**
+
+![Luz de fondo](docs/img/lighting-rolling.png)
+
+**Color por tecla**
+
+![Color por tecla](docs/img/perkey.png)
+
+**Remapeo de teclas**
+
+![Remapeo](docs/img/remap.png)
+
+**Estado del dispositivo**
+
+![Estado](docs/img/info.png)
+
+---
+
+## Hardware
+
+| Dato | Valor |
+| --- | --- |
+| Modelo | AULA F108 Pro (三模机械键盘) |
+| Fabricante | Dongguan Suoai Electronic Technology |
+| Teclas | 108, ANSI US, sin variante ISO conocida |
+| Conexiones | USB-C, 2.4 GHz (dongle), Bluetooth |
+| MCU | Sonix SN32F290, Cortex-M0, 256 KB de flash |
+| Almacenamiento | SPI flash de 16 MB solo con gráficos |
+| Pantalla | LCD 240x135, RGB565, hasta 141 cuadros |
+| Firmware de referencia | `0x0138` (138) |
+| VID:PID cable | `0c45:800a` |
+| VID:PID dongle | `05ac:024f` (el dongle imita un teclado Apple) |
+| Batería | reportada por 2.4 GHz |
+
+Otras variantes que aparecen en el ecosistema AULA/Epomaker/AJAZZ/Alma comparten
+software de Windows, pero **no están verificadas acá**. Si tu unidad responde,
+abrí un issue con el `bcdDevice` y el VID:PID.
 
 ---
 
@@ -285,6 +337,18 @@ go run ./tools/lcdgen -logo logo.png -out out.gif \
 ```
 
 ---
+
+## Compatibilidad
+
+| Teclado | Estado |
+| --- | --- |
+| AULA F108 Pro ANSI, firmware 138 | probado en hardware |
+| AULA F108 Pro con otro firmware | no probado |
+| Variantes ISO / 87 teclas / TKL | no soportadas (otro layout y otras tablas) |
+| AJAZZ / Epomaker / Alma con la misma placa | no probado |
+| Otros teclados con Sonix | no soportados |
+
+La detección es por VID/PID exactos. openaula no intenta adivinar modelos.
 
 ## Limitaciones conocidas
 

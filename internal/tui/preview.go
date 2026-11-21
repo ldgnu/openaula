@@ -43,7 +43,7 @@ func previewFrame(frame int, l *lightingModel) []string {
 			}
 			line += lipgloss.NewStyle().
 				Background(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", clamp255(c[0]), clamp255(c[1]), clamp255(c[2])))).
-				Render("  ")
+				Render("  ") + " "
 		}
 		rows[y] = line
 	}
