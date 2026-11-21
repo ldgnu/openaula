@@ -72,30 +72,44 @@ func parseRGB(s string) ([3]uint8, error) {
 	return c, nil
 }
 
-// runWatch listens for system events and flashes the keyboard.
-func runWatch(f *flasher, notifications bool, notifColor [3]uint8, volume bool, up, down [3]uint8,
-	battery bool, threshold int, interval time.Duration, lowColor [3]uint8) error {
+// runWatch starts every requested event source.
+func runWatch(f *flasher, o *watchOpts) error {
+	if !o.notifications && !o.volume && !o.battery && !o.sleep && !o.lock && !o.fullCharge && !o.leds && !o.schedule {
+		return fmt.Errorf("elegí al menos un evento")
+	}
+
 	events := make(chan [3]uint8, 8)
-
-	if notifications {
-		go watchNotifications(events, notifColor)
+	if o.notifications {
+		go watchNotifications(events, o.notifColor)
 	}
-	if volume {
-		go watchVolume(events, up, down)
+	if o.volume {
+		go watchVolume(events, o.up, o.down)
 	}
-	if battery {
-		go watchBattery(f, threshold, interval, lowColor)
+	if o.battery {
+		go watchBattery(f, o.threshold, o.interval, o.lowColor)
 	}
-	if !notifications && !volume && !battery {
-		return fmt.Errorf("elegí al menos un evento: --notifications, --volume o --battery")
+	if o.fullCharge {
+		go watchFullCharge(f, o.fullLevel, o.fullColor, o.interval)
 	}
-
-	// Debounce: burst of events produce a single flash.
-	for c := range events {
-		select {
-		case <-time.After(120 * time.Millisecond):
+	if o.sleep || o.lock {
+		ov := &overlay{svc: f.svc}
+		if o.sleep {
+			go watchSleep(f, ov)
 		}
-		// Drain anything queued during the debounce window.
+		if o.lock {
+			go watchLock(f, ov, o.lockColor)
+		}
+	}
+	if o.leds {
+		go watchLEDs(f)
+	}
+	if o.schedule {
+		go watchSchedule(f, o)
+	}
+
+	// Debounce: a burst of events produces a single flash.
+	for c := range events {
+		time.Sleep(120 * time.Millisecond)
 		for len(events) > 0 {
 			<-events
 		}

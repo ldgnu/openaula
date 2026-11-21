@@ -285,6 +285,15 @@ openaula watch --notifications --volume --battery
   (`--battery-threshold`, 15% por defecto) hace cuatro destellos rojos y manda
   una notificación de escritorio. Repite el aviso cada 10 minutos. Por cable no
   hay lectura de batería, así que simplemente no avisa.
+- **Carga completa**: `--full-charge` avisa con tres destellos verdes cuando
+  llega a `--full-level` (95%).
+- **Suspensión**: `--sleep` apaga la luz al dormir la máquina y la restaura al
+  volver.
+- **Bloqueo de sesión**: `--lock` deja un naranja tenue mientras está bloqueada.
+- **Caps Lock y Num Lock**: `--leds` destella al activarlos o desactivarlos;
+  necesita permiso de lectura sobre `/dev/input` (grupo `input`).
+- **Perfil por hora**: `--schedule` usa `--day-color` y `--night-color` con
+  brillo 5 y 2, entre `--day-start` (8) y `--day-end` (20).
 
 Después del destello vuelve a la configuración guardada. Los eventos seguidos se
 agrupan con un debounce de 120 ms.
