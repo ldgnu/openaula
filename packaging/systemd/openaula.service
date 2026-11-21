@@ -1,0 +1,10 @@
+[Unit]
+Description=openaula API (AULA F108 Pro)
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/openaula serve --addr 127.0.0.1:8723 --idle 60s
+Restart=no
+
+[Install]
+WantedBy=default.target
