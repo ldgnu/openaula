@@ -77,6 +77,17 @@ func min(a, b float64) float64 {
 	return b
 }
 
+// RawLCDBuffer trims a padded LCD buffer to the exact size the 2.4 GHz channel
+// expects (header + frames, no page padding).
+func RawLCDBuffer(buf []byte) ([]byte, int) {
+	frames := FrameCount(buf)
+	size := gifHeaderSize + frameBytes*frames
+	if size > len(buf) {
+		return buf, frames
+	}
+	return buf[:size], frames
+}
+
 // FrameCount reports how many frames an LCD buffer contains.
 func FrameCount(buf []byte) int {
 	if len(buf) == 0 {

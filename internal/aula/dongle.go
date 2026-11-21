@@ -249,6 +249,38 @@ func (d *Dongle) sendChunks(cmd byte, data []byte) error {
 	return nil
 }
 
+// UploadLCD uploads a raw LCD buffer (header + RGB565 frames + AA 55) over the
+// dongle. The vendor hides this in wireless mode, so treat it as experimental.
+// progress is called with (chunksSent, totalChunks).
+func (d *Dongle) UploadLCD(buf []byte, slot uint8, progress func(sent, total int)) error {
+	const chunk = 28
+	total := len(buf)
+	chunks := (total + chunk - 1) / chunk
+
+	header := newDonglePacket(0x7F, 0x03, 0, slot,
+		byte(chunks), byte(chunks>>8), byte(chunks>>16))
+	if _, err := d.exchange(header); err != nil {
+		return fmt.Errorf("cabecera LCD: %w", err)
+	}
+
+	for i := 0; i < chunks; i++ {
+		start := i * chunk
+		end := start + chunk
+		if end > total {
+			end = total
+		}
+		p := newDonglePacket(0x80|byte(i>>16), byte(i), byte(i>>8), buf[start:end]...)
+		if _, err := d.exchange(p); err != nil {
+			return fmt.Errorf("chunk %d/%d: %w", i+1, chunks, err)
+		}
+		if progress != nil && (i%64 == 0 || i == chunks-1) {
+			progress(i+1, chunks)
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+	return nil
+}
+
 // FirmwareFromBCD converts HID bcdDevice to the firmware number the vendor UI
 // shows (0x0120 -> 120).
 func FirmwareFromBCD(bcd uint16) string {

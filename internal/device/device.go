@@ -205,6 +205,17 @@ func (s *Service) LCDImage(r io.Reader, progress func(sent, total int)) error {
 	if err != nil {
 		return err
 	}
+	info := aula.Detect()
+	if info.Transport == aula.Conn24G {
+		raw, _ := aula.RawLCDBuffer(buf)
+		return s.withConfig(func(c aula.Configurator) error {
+			d, ok := c.(*aula.Dongle)
+			if !ok {
+				return fmt.Errorf("transporte inesperado")
+			}
+			return d.UploadLCD(raw, 1, progress)
+		})
+	}
 	return s.withDevice(func(d *aula.Device) error { return d.UploadLCDImage(buf, 1, progress) })
 }
 

@@ -1,10 +1,11 @@
-# AULA / Epomaker F108 Pro — permite usar openaula sin root.
-# Instalar en /etc/udev/rules.d/ y recargar:
+# AULA / Epomaker F108 Pro — acceso sin root a cable y dongle.
 #   sudo install -m644 packaging/udev/99-openaula.rules /etc/udev/rules.d/
 #   sudo udevadm control --reload-rules && sudo udevadm trigger
 
-# Modo cableado (USB-C): configuración completa.
-SUBSYSTEM=="usb", ATTR{idVendor}=="0c45", ATTR{idProduct}=="800a", MODE="0660", GROUP="usb"
+# Cable USB-C (configuración completa)
+SUBSYSTEM=="usb", ATTR{idVendor}=="0c45", ATTR{idProduct}=="800a", MODE="0660", GROUP="usb", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0c45", ATTRS{idProduct}=="800a", MODE="0660", GROUP="usb", TAG+="uaccess"
 
-# Dongle 2.4 GHz: solo para que el daemon pueda detectarlo. openaula no escribe en él.
-SUBSYSTEM=="usb", ATTR{idVendor}=="05ac", ATTR{idProduct}=="024f", MODE="0660", GROUP="usb"
+# Dongle 2.4 GHz
+SUBSYSTEM=="usb", ATTR{idVendor}=="05ac", ATTR{idProduct}=="024f", MODE="0660", GROUP="usb", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="024f", MODE="0660", GROUP="usb", TAG+="uaccess"

@@ -17,37 +17,44 @@ Cuando no hay nada corriendo, openaula no consume CPU, memoria ni USB.
 
 | Función | USB-C (`0c45:800a`) | Dongle 2.4 GHz (`05ac:024f`) |
 | --- | --- | --- |
-| Detección | sí | sí |
-| Luz de fondo | sí | **no** |
-| Color por tecla | sí | **no** |
-| Remapeo | sí | **no** |
-| Reloj del LCD | sí | **no** |
-| Imagen en el LCD | sí | **no** |
+| Detección y batería | sí | sí |
+| Luz de fondo | sí | sí |
+| Color por tecla | sí | sí |
+| Remapeo | sí | sí |
+| Reloj del LCD | sí | sí |
+| Imagen en el LCD | sí | experimental |
 
-La configuración se hace **solo por cable USB-C**. El canal vendor del dongle
-2.4 GHz no está documentado y, durante el desarrollo, mandarle paquetes colgó el
-receptor hasta desconectarlo y volver a conectarlo. openaula detecta el dongle
-pero no escribe en él.
+Cuando están los dos conectados se usa el cable. Bluetooth no permite
+configuración, igual que en el software oficial.
 
-Lo que configurás por cable queda guardado en el firmware del teclado: después
-lo desconectás y seguís usando 2.4 GHz o Bluetooth con la misma configuración.
+El canal 2.4 GHz no es el mismo protocolo que el cable: usa paquetes de 32 bytes
+con checksum y sin transacción begin/apply. Está documentado en
+`docs/PROTOCOLO.md`.
 
-## Requisitos
+La subida de imágenes por 2.4 GHz existe en el firmware pero el software oficial
+la oculta; puede tardar minutos y no está verificada. Si algo sale mal, probá
+por cable.
 
-- Go 1.24 o superior.
-- libusb (cgo). En Gentoo: `emerge dev-libs/libusb`. En Debian/Ubuntu:
-  `apt install libusb-1.0-0-dev pkg-config`.
+## Instalación
 
-## Compilar e instalar
+Un comando, cualquier distribución, sin dependencias (el binario es estático):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ldgnu/openaula/main/install.sh | sh
+```
+
+El instalador detecta la arquitectura, baja el binario del último release (o
+compila si no hay build para tu arquitectura), lo instala en `/usr/local/bin` y
+deja la regla udev con el grupo correcto (`usb`, `plugdev` o `input` según lo que
+exista en el sistema).
+
+Si preferís compilar: solo necesitás Go, sin cgo ni libusb.
 
 ```bash
 make build          # genera ./openaula
 sudo make install   # copia a /usr/local/bin
 sudo make udev      # regla udev para no necesitar root
 ```
-
-La regla udev da acceso al grupo `usb` con modo `0660`. Verificá que tu usuario
-esté en ese grupo (`id -nG`).
 
 ## Uso
 

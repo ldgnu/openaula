@@ -402,18 +402,26 @@ func cmdLCD(svc *device.Service, args []string) error {
 		fmt.Println("OK")
 		return nil
 	case "image":
-		fs := flag.NewFlagSet("lcd image", flag.ExitOnError)
-		yes := fs.Bool("yes", false, "confirmar subida riesgosa")
-		_ = fs.Parse(args[1:])
-		if fs.NArg() != 1 {
+		// Accept --yes before or after the file name.
+		file := ""
+		yes := false
+		for _, a := range args[1:] {
+			switch a {
+			case "--yes", "-yes":
+				yes = true
+			default:
+				file = a
+			}
+		}
+		if file == "" {
 			return fmt.Errorf("usá: lcd image archivo.gif [--yes]")
 		}
-		if !*yes {
+		if !yes {
 			fmt.Fprintln(os.Stderr, "Aviso: subir imágenes puede dañar los gráficos internos del teclado.")
 			fmt.Fprintln(os.Stderr, "Volvé a ejecutar con --yes para confirmar.")
 			return nil
 		}
-		f, err := os.Open(fs.Arg(0))
+		f, err := os.Open(file)
 		if err != nil {
 			return err
 		}
