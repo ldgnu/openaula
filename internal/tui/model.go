@@ -28,6 +28,7 @@ const (
 	screenProfiles
 	screenPresets
 	screenOS
+	screenWal
 	screenInfo
 )
 
@@ -47,6 +48,7 @@ type Model struct {
 	remap    remapModel
 	presets  presetsModel
 	os       osModel
+	wal      walModel
 	lcd      lcdModel
 	profiles profilesModel
 
@@ -145,6 +147,8 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.updatePresets(key)
 	case screenOS:
 		return m.updateOS(key)
+	case screenWal:
+		return m.updateWal(key)
 	case screenInfo:
 		return m.updateInfo(key)
 	}
@@ -160,6 +164,7 @@ var menuItems = []struct {
 	{"Remapear teclas", screenRemap},
 	{"Ajustes rápidos (F1–F12, Enter)", screenPresets},
 	{"Sistema operativo", screenOS},
+	{"Color de pywal", screenWal},
 	{"Reloj del LCD", screenClock},
 	{"Pantalla del LCD", screenLCD},
 	{"Perfiles", screenProfiles},
@@ -280,6 +285,8 @@ func (m *Model) hints() string {
 		return "↑↓ elegir · Enter aplicar · Esc volver"
 	case screenOS:
 		return "↑↓ elegir · Enter aplicar · Esc volver"
+	case screenWal:
+		return "←→ elegir color · Enter aplicar · r recargar · Esc volver"
 	case screenInfo:
 		return "Enter o Esc volver"
 	}

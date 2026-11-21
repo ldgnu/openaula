@@ -21,6 +21,7 @@ import (
 	"github.com/ldgnu/openaula/internal/device"
 	"github.com/ldgnu/openaula/internal/state"
 	"github.com/ldgnu/openaula/internal/tui"
+	"github.com/ldgnu/openaula/internal/wal"
 )
 
 func main() {
@@ -59,6 +60,8 @@ func run(args []string) error {
 		return cmdOS(svc, store, rest)
 	case "battery":
 		return cmdBattery()
+	case "wal":
+		return cmdWal(svc, store, rest)
 	case "perkey":
 		return cmdPerKey(svc, store, rest)
 	case "remap":
@@ -96,6 +99,7 @@ uso:
   openaula off                  apaga la luz
   openaula preset <id>          aplica un preset de remapeo
   openaula battery              batería (solo dongle 2.4 GHz)
+  openaula wal [--watch]        usa el color de pywal
   openaula os [id]              configura modificadores para Windows/Linux, macOS, iOS o Android
   openaula perkey ...           color por tecla
   openaula remap ...            remapeos
@@ -220,6 +224,72 @@ func cmdPreset(svc *device.Service, store *state.Store, args []string) error {
 	}
 	fmt.Printf("Preset %s aplicado (%d remapeos)\n", id, len(keys))
 	return nil
+}
+
+func cmdWal(svc *device.Service, store *state.Store, args []string) error {
+	fs := flag.NewFlagSet("wal", flag.ExitOnError)
+	index := fs.Int("index", 4, "color de pywal a usar (0-15)")
+	brightness := fs.Int("brightness", 5, "brillo 0-5")
+	mode := fs.Int("mode", 1, "modo de luz (0-19)")
+	watch := fs.Bool("watch", false, "seguir los cambios de pywal")
+	_ = fs.Parse(args)
+
+	apply := func() error {
+		pal, err := wal.Load()
+		if err != nil {
+			return err
+		}
+		c := pal.Accent(*index)
+		st, err := store.Load()
+		if err != nil {
+			return err
+		}
+		l := st.Lighting
+		l.Mode = *mode
+		l.R, l.G, l.B = c[0], c[1], c[2]
+		l.Brightness = uint8(*brightness)
+		if err := svc.ApplyLighting(l); err != nil {
+			return err
+		}
+		st.Lighting = l
+		if err := store.Save(st); err != nil {
+			return err
+		}
+		fmt.Printf("pywal color%d -> #%02x%02x%02x\n", *index, c[0], c[1], c[2])
+		return nil
+	}
+
+	if err := apply(); err != nil {
+		return err
+	}
+	if !*watch {
+		return nil
+	}
+
+	dir, err := wal.Dir()
+	if err != nil {
+		return err
+	}
+	file := dir + "/colors.json"
+	last := fileModTime(file)
+	for {
+		time.Sleep(2 * time.Second)
+		cur := fileModTime(file)
+		if cur != last {
+			last = cur
+			if err := apply(); err != nil {
+				fmt.Fprintln(os.Stderr, "wal:", err)
+			}
+		}
+	}
+}
+
+func fileModTime(path string) time.Time {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return time.Time{}
+	}
+	return fi.ModTime()
 }
 
 func cmdBattery() error {

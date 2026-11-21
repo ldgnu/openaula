@@ -20,6 +20,7 @@ import (
 	"github.com/ldgnu/openaula/internal/aula"
 	"github.com/ldgnu/openaula/internal/device"
 	"github.com/ldgnu/openaula/internal/state"
+	"github.com/ldgnu/openaula/internal/wal"
 )
 
 // Server is the HTTP API server.
@@ -116,6 +117,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/remap", s.handleRemap)
 	s.mux.HandleFunc("POST /api/v1/remap/reset", s.handleRemapReset)
 	s.mux.HandleFunc("POST /api/v1/clock", s.handleClock)
+	s.mux.HandleFunc("GET /api/v1/wal", s.handleWalPalette)
+	s.mux.HandleFunc("POST /api/v1/wal", s.handleWalApply)
 	s.mux.HandleFunc("GET /api/v1/presets", s.handlePresets)
 	s.mux.HandleFunc("POST /api/v1/presets/{id}", s.handleApplyPreset)
 	s.mux.HandleFunc("GET /api/v1/os", s.handleOSProfiles)
@@ -318,6 +321,53 @@ func (s *Server) handleRemapReset(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = s.store.Save(st)
 	writeJSON(w, http.StatusOK, map[string]string{"result": "reset"})
+}
+
+func (s *Server) handleWalPalette(w http.ResponseWriter, r *http.Request) {
+	pal, err := wal.Load()
+	if err != nil {
+		writeErr(w, http.StatusNotFound, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, pal)
+}
+
+func (s *Server) handleWalApply(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Index      int   `json:"index"`
+		Brightness uint8 `json:"brightness"`
+		Mode       int   `json:"mode"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	pal, err := wal.Load()
+	if err != nil {
+		writeErr(w, http.StatusNotFound, err)
+		return
+	}
+	c := pal.Accent(req.Index)
+	st, err := s.store.Load()
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err)
+		return
+	}
+	l := st.Lighting
+	if req.Mode > 0 {
+		l.Mode = req.Mode
+	}
+	if req.Brightness > 0 {
+		l.Brightness = req.Brightness
+	}
+	l.R, l.G, l.B = c[0], c[1], c[2]
+	if err := s.svc.ApplyLighting(l); err != nil {
+		writeDeviceErr(w, err)
+		return
+	}
+	st.Lighting = l
+	_ = s.store.Save(st)
+	writeJSON(w, http.StatusOK, map[string]any{"color": c, "index": req.Index})
 }
 
 func (s *Server) handlePresets(w http.ResponseWriter, r *http.Request) {
