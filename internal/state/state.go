@@ -47,6 +47,7 @@ type Settings struct {
 	Lighting Lighting  `json:"lighting"`
 	PerKey   PerKey    `json:"per_key"`
 	Remap    Remap     `json:"remap"`
+	OS       string    `json:"os"`
 	Updated  time.Time `json:"updated"`
 }
 
@@ -56,6 +57,7 @@ func Default() Settings {
 		Lighting: Lighting{Mode: 11, R: 255, G: 0, B: 0, Brightness: 5, Speed: 3},
 		PerKey:   PerKey{Brightness: 5, Colors: map[string]RGB{}},
 		Remap:    Remap{Normal: map[string]string{}, FN: map[string]string{}},
+		OS:       "windows",
 	}
 }
 
@@ -173,6 +175,9 @@ func normalize(st *Settings) {
 	}
 	if st.Lighting.Mode < 0 || st.Lighting.Mode > 19 {
 		st.Lighting.Mode = 1
+	}
+	if st.OS == "" {
+		st.OS = "windows"
 	}
 }
 

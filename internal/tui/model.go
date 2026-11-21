@@ -27,6 +27,7 @@ const (
 	screenLCD
 	screenProfiles
 	screenPresets
+	screenOS
 	screenInfo
 )
 
@@ -45,6 +46,7 @@ type Model struct {
 	perkey   perKeyModel
 	remap    remapModel
 	presets  presetsModel
+	os       osModel
 	lcd      lcdModel
 	profiles profilesModel
 
@@ -136,6 +138,8 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.updateProfiles(key)
 	case screenPresets:
 		return m.updatePresets(key)
+	case screenOS:
+		return m.updateOS(key)
 	case screenInfo:
 		return m.updateInfo(key)
 	}
@@ -150,6 +154,7 @@ var menuItems = []struct {
 	{"Color por tecla", screenPerKey},
 	{"Remapear teclas", screenRemap},
 	{"Ajustes rápidos (F1–F12, Enter)", screenPresets},
+	{"Sistema operativo", screenOS},
 	{"Reloj del LCD", screenClock},
 	{"Pantalla del LCD", screenLCD},
 	{"Perfiles", screenProfiles},
@@ -267,6 +272,8 @@ func (m *Model) hints() string {
 	case screenProfiles:
 		return m.profiles.hint()
 	case screenPresets:
+		return "↑↓ elegir · Enter aplicar · Esc volver"
+	case screenOS:
 		return "↑↓ elegir · Enter aplicar · Esc volver"
 	case screenInfo:
 		return "Enter o Esc volver"
