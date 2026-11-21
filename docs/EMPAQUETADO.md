@@ -16,8 +16,8 @@ Todo el empaquetado vive en `packaging/`.
 El workflow `.github/workflows/release.yml` se dispara con un tag `v*`:
 
 ```bash
-git tag -a v0.1.4 -m "v0.1.4"
-git push origin v0.1.4
+git tag -a v0.1.5 -m "v0.1.5"
+git push origin v0.1.5
 ```
 
 Genera:
@@ -77,7 +77,7 @@ Antes de publicar un release nuevo, actualizar en ambos `PKGBUILD` y en los
    makepkg --printsrcinfo > .SRCINFO   # regenerar siempre antes de subir
    makepkg -si                          # probar el build local
    git add PKGBUILD .SRCINFO
-   git commit -m "openaula 0.1.4"
+   git commit -m "openaula 0.1.5"
    git push
    ```
 
@@ -101,7 +101,7 @@ para copiar tal cual.
 El ebuild está en:
 
 ```
-packaging/gentoo/app-misc/openaula/openaula-0.1.4.ebuild
+packaging/gentoo/app-misc/openaula/openaula-0.1.5.ebuild
 packaging/gentoo/app-misc/openaula/metadata.xml
 ```
 
@@ -114,7 +114,7 @@ durante el build y sin depender de libusb.
 sudo mkdir -p /var/db/repos/local/app-misc
 sudo cp -r packaging/gentoo/app-misc/openaula /var/db/repos/local/app-misc/
 cd /var/db/repos/local/app-misc/openaula
-sudo ebuild openaula-0.1.4.ebuild manifest
+sudo ebuild openaula-0.1.5.ebuild manifest
 sudo emerge -av app-misc/openaula
 ```
 

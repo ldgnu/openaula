@@ -12,6 +12,13 @@ Un solo binario estático en Go con tres formas de uso:
 No hay proceso residente: cada acción abre el teclado, manda el comando y sale.
 Cuando no hay nada corriendo, openaula no consume CPU, memoria ni USB.
 
+> **Recomendado: configurar por cable USB-C.** Es el camino más rápido y
+> confiable. La configuración por 2.4 GHz **también funciona y está probada**
+> (luz, color por tecla, remapeos, reloj y batería), con una sola excepción:
+> **subir imágenes al LCD por 2.4 GHz es problemático** porque la transferencia
+> es larga y el teclado se suspende a mitad de camino. Para imágenes, usá el
+> cable.
+>
 > **Probado únicamente en el AULA F108 Pro ANSI de 108 teclas con firmware
 > `0x0138`.** No se probó en otros modelos, en la variante ISO, en los rebrand
 > de AJAZZ/Epomaker/Alma ni en otras versiones de firmware. Si tu teclado tiene
@@ -91,11 +98,11 @@ abrí un issue con el `bcdDevice` y el VID:PID.
 | Función | USB-C (`0c45:800a`) | Dongle 2.4 GHz (`05ac:024f`) |
 | --- | --- | --- |
 | Detección y batería | sí | sí |
-| Luz de fondo | sí | sí |
-| Color por tecla | sí | sí |
-| Remapeo | sí | sí |
-| Reloj del LCD | sí | sí |
-| Imagen en el LCD | sí | experimental |
+| Luz de fondo | sí | sí (probado) |
+| Color por tecla | sí | sí (probado) |
+| Remapeo | sí | sí (probado) |
+| Reloj del LCD | sí | sí (probado) |
+| Imagen en el LCD | sí | experimental: se corta si el teclado se duerme |
 
 Cuando están los dos conectados se usa el cable. **Bluetooth no permite
 configuración**, igual que en el software oficial de Aula.
@@ -318,9 +325,11 @@ siguiendo en segundo plano.
 - Acepta GIF animado, PNG y JPEG. Las imágenes estáticas se escalan manteniendo
   proporción y se centran sobre fondo negro.
 - Límite seguro: **141 cuadros**. openaula bloquea anything más grande.
-- Cada cuadro pesa ~64 KB; la subida por 2.4 GHz tarda unos 11 segundos por
-  cuadro y el enlace se corta si el teclado entra en suspensión. Por cable tarda
-  segundos.
+- Cada cuadro pesa ~64 KB. Por 2.4 GHz la subida tarda unos 11 segundos por
+  cuadro y el enlace se corta cuando el teclado entra en suspensión, así que
+  hay que mantenerlo despierto o reanudar con `--start`. **Para imágenes se
+  recomienda el cable USB-C**, que sube en segundos y no depende del timer de
+  suspensión.
 - Si una subida se corta, `--start N` retoma desde el chunk indicado.
 
 **Advertencia**: subir imágenes puede dañar de forma permanente los gráficos
