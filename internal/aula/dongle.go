@@ -264,8 +264,19 @@ func (d *Dongle) UploadLCDFrom(buf []byte, slot uint8, startChunk int, progress 
 
 	header := newDonglePacket(0x7F, 0x03, 0, slot,
 		byte(chunks), byte(chunks>>8), byte(chunks>>16))
-	if _, err := d.exchange(header); err != nil {
-		return fmt.Errorf("cabecera LCD: %w", err)
+	var herr error
+	for attempt := 0; attempt < 300; attempt++ {
+		if _, herr = d.exchange(header); herr == nil {
+			break
+		}
+		if attempt < 10 {
+			time.Sleep(20 * time.Millisecond)
+		} else {
+			time.Sleep(200 * time.Millisecond)
+		}
+	}
+	if herr != nil {
+		return fmt.Errorf("cabecera LCD: %w", herr)
 	}
 
 	if startChunk < 0 {
@@ -285,7 +296,9 @@ func (d *Dongle) UploadLCDFrom(buf []byte, slot uint8, startChunk int, progress 
 		}
 
 		var lastErr error
-		for attempt := 0; attempt < 50; attempt++ {
+		// The keyboard drops vendor traffic while its firmware sleeps. Wait up
+		// to ~5 minutes for it to wake instead of aborting the whole upload.
+		for attempt := 0; attempt < 300; attempt++ {
 			if _, err := d.exchange(p); err == nil {
 				lastErr = nil
 				break
@@ -293,7 +306,11 @@ func (d *Dongle) UploadLCDFrom(buf []byte, slot uint8, startChunk int, progress 
 				lastErr = err
 				// A missed echo is usually the keyboard dropping the RF link for
 				// a moment; poke it and retry the same chunk.
-				time.Sleep(time.Duration(20*(attempt+1)) * time.Millisecond)
+				if attempt < 10 {
+					time.Sleep(20 * time.Millisecond)
+				} else {
+					time.Sleep(200 * time.Millisecond)
+				}
 				_, _ = d.exchange(newDonglePacket(dongleCmdProbe, 0, 0))
 			}
 		}
