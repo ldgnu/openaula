@@ -110,6 +110,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// Treat every flavour of Enter the same: CR, LF and the keypad Enter,
+	// which some terminals report as a separate sequence.
+	if msg.Type == tea.KeyEnter || msg.String() == "enter" || msg.String() == "ctrl+j" || msg.String() == "ctrl+m" || msg.String() == "kpenter" {
+		msg = tea.KeyMsg{Type: tea.KeyEnter}
+	}
 	key := msg.String()
 
 	// Text inputs consume their own keys.
