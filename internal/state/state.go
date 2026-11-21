@@ -44,11 +44,13 @@ type Remap struct {
 
 // Settings is the full desired configuration.
 type Settings struct {
-	Lighting Lighting  `json:"lighting"`
-	PerKey   PerKey    `json:"per_key"`
-	Remap    Remap     `json:"remap"`
-	OS       string    `json:"os"`
-	Updated  time.Time `json:"updated"`
+	Lighting  Lighting  `json:"lighting"`
+	PerKey    PerKey    `json:"per_key"`
+	Remap     Remap     `json:"remap"`
+	OS        string    `json:"os"`
+	FollowWal bool      `json:"follow_wal"`
+	WalIndex  int       `json:"wal_index"`
+	Updated   time.Time `json:"updated"`
 }
 
 // Default returns sensible defaults matching the keyboard's factory look.

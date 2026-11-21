@@ -6,7 +6,10 @@ package tui
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,6 +17,7 @@ import (
 	"github.com/ldgnu/openaula/internal/aula"
 	"github.com/ldgnu/openaula/internal/device"
 	"github.com/ldgnu/openaula/internal/state"
+	"github.com/ldgnu/openaula/internal/wal"
 )
 
 type screen int
@@ -55,8 +59,42 @@ type Model struct {
 	width  int
 	height int
 
-	status string
-	errMsg string
+	status   string
+	errMsg   string
+	walMtime time.Time
+}
+
+// handleWalTick re-applies the palette when pywal regenerated it.
+func (m *Model) handleWalTick() (tea.Model, tea.Cmd) {
+	if !m.settings.FollowWal {
+		return m, nil
+	}
+	cur := walModTime()
+	if cur.IsZero() || cur.Equal(m.walMtime) {
+		return m, tea.Tick(5*time.Second, func(time.Time) tea.Msg { return walTickMsg{} })
+	}
+	m.walMtime = cur
+	pal, err := wal.Load()
+	if err == nil {
+		m.wal.pal = pal
+		m.applyWalColor()
+		if m.status == "" {
+			m.setStatus("Color actualizado desde pywal")
+		}
+	}
+	return m, tea.Tick(5*time.Second, func(time.Time) tea.Msg { return walTickMsg{} })
+}
+
+func walModTime() time.Time {
+	dir, err := wal.Dir()
+	if err != nil {
+		return time.Time{}
+	}
+	fi, err := os.Stat(filepath.Join(dir, "colors.json"))
+	if err != nil {
+		return time.Time{}
+	}
+	return fi.ModTime()
 }
 
 var (
@@ -86,6 +124,7 @@ func New(svc *device.Service, store *state.Store) *Model {
 	m.remap = newRemapModel(st.Remap)
 	m.lcd = newLCDModel()
 	m.profiles = newProfilesModel()
+	m.applyWalOnStart()
 	return m
 }
 
@@ -97,7 +136,15 @@ func Run(svc *device.Service, store *state.Store) error {
 }
 
 // Init implements tea.Model.
-func (m *Model) Init() tea.Cmd { return nil }
+func (m *Model) Init() tea.Cmd {
+	if m.settings.FollowWal {
+		m.walMtime = walModTime()
+		return tea.Tick(5*time.Second, func(time.Time) tea.Msg { return walTickMsg{} })
+	}
+	return nil
+}
+
+type walTickMsg struct{}
 
 // Update implements tea.Model.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -107,6 +154,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.KeyMsg:
 		return m.handleKey(msg)
+	case walTickMsg:
+		return m.handleWalTick()
 	}
 	return m, nil
 }
@@ -286,7 +335,7 @@ func (m *Model) hints() string {
 	case screenOS:
 		return "↑↓ elegir · Enter aplicar · Esc volver"
 	case screenWal:
-		return "←→ elegir color · Enter aplicar · r recargar · Esc volver"
+		return "↑↓ mover · ←→ elegir color · Enter aplicar/opción · r recargar · Esc volver"
 	case screenInfo:
 		return "Enter o Esc volver"
 	}

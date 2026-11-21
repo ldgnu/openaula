@@ -232,6 +232,8 @@ func cmdWal(svc *device.Service, store *state.Store, args []string) error {
 	brightness := fs.Int("brightness", 5, "brillo 0-5")
 	mode := fs.Int("mode", 1, "modo de luz (0-19)")
 	watch := fs.Bool("watch", false, "seguir los cambios de pywal")
+	follow := fs.Bool("follow", false, "activar la opción en la configuración")
+	noFollow := fs.Bool("no-follow", false, "desactivar la opción")
 	_ = fs.Parse(args)
 
 	apply := func() error {
@@ -252,6 +254,13 @@ func cmdWal(svc *device.Service, store *state.Store, args []string) error {
 			return err
 		}
 		st.Lighting = l
+		st.WalIndex = *index
+		if *follow {
+			st.FollowWal = true
+		}
+		if *noFollow {
+			st.FollowWal = false
+		}
 		if err := store.Save(st); err != nil {
 			return err
 		}
