@@ -261,6 +261,43 @@ curl -s -X POST localhost:8723/api/v1/profiles/noche/apply
 
 ---
 
+## Destellos por eventos
+
+Dos comandos para reaccionar a eventos del sistema. Ambos son opt-in: si no los
+corrés, no hay nada de fondo.
+
+```bash
+# Destello puntual, para usar desde cualquier hook
+openaula flash --color 0,255,0 --duration 200ms
+
+# Vigilar notificaciones y volumen
+openaula watch --notifications --volume
+```
+
+`watch` escucha:
+
+- **Notificaciones**: llamadas a `org.freedesktop.Notifications.Notify` por
+  D-Bus. Destella en blanco (configurable con `--color`).
+- **Volumen**: cambios en el sink por defecto vía `pactl subscribe`, con
+  `wpctl` o `pactl` para leer el nivel. Verde al subir (`--vol-up`) y rojo al
+  bajar (`--vol-down`).
+
+Después del destello vuelve a la configuración guardada. Los eventos seguidos se
+agrupan con un debounce de 120 ms.
+
+Para dejarlo permanente hay una unidad de usuario:
+`packaging/systemd/openaula-watch.service`.
+
+Alternativa sin daemon: engancharlo al gestor de notificaciones.
+
+```ini
+# dunst: ~/.config/dunst/dunstrc
+[urgency_normal]
+    script = openaula flash --color 255,255,255 --duration 150ms
+```
+
+---
+
 ## Configuración persistente
 
 El teclado **no se puede leer**: el protocolo es write-only. openaula guarda lo

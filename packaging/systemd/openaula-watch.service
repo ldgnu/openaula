@@ -1,0 +1,11 @@
+[Unit]
+Description=openaula: destellos del teclado ante eventos del sistema
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/local/bin/openaula watch --notifications --volume
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

@@ -62,6 +62,10 @@ func run(args []string) error {
 		return cmdBattery()
 	case "wal":
 		return cmdWal(svc, store, rest)
+	case "flash":
+		return cmdFlash(svc, store, rest)
+	case "watch":
+		return cmdWatch(svc, store, rest)
 	case "perkey":
 		return cmdPerKey(svc, store, rest)
 	case "remap":
@@ -100,6 +104,8 @@ uso:
   openaula preset <id>          aplica un preset de remapeo
   openaula battery              batería (solo dongle 2.4 GHz)
   openaula wal [--watch]        usa el color de pywal
+  openaula flash                destello corto (para hooks)
+  openaula watch                destella ante notificaciones o cambios de volumen
   openaula os [id]              configura modificadores para Windows/Linux, macOS, iOS o Android
   openaula perkey ...           color por tecla
   openaula remap ...            remapeos
@@ -224,6 +230,49 @@ func cmdPreset(svc *device.Service, store *state.Store, args []string) error {
 	}
 	fmt.Printf("Preset %s aplicado (%d remapeos)\n", id, len(keys))
 	return nil
+}
+
+func cmdFlash(svc *device.Service, store *state.Store, args []string) error {
+	fs := flag.NewFlagSet("flash", flag.ExitOnError)
+	color := fs.String("color", "255,255,255", "color del destello r,g,b")
+	duration := fs.Duration("duration", 150*time.Millisecond, "duración del destello")
+	_ = fs.Parse(args)
+
+	c, err := parseRGB(*color)
+	if err != nil {
+		return err
+	}
+	f := &flasher{svc: svc, store: store, duration: *duration}
+	f.flash(c)
+	return nil
+}
+
+func cmdWatch(svc *device.Service, store *state.Store, args []string) error {
+	fs := flag.NewFlagSet("watch", flag.ExitOnError)
+	notifications := fs.Bool("notifications", false, "destellar con cada notificación de escritorio")
+	volume := fs.Bool("volume", false, "destellar al subir o bajar el volumen")
+	color := fs.String("color", "255,255,255", "color de las notificaciones")
+	up := fs.String("vol-up", "0,255,0", "color al subir el volumen")
+	down := fs.String("vol-down", "255,0,0", "color al bajar el volumen")
+	duration := fs.Duration("duration", 150*time.Millisecond, "duración del destello")
+	_ = fs.Parse(args)
+
+	base, err := parseRGB(*color)
+	if err != nil {
+		return err
+	}
+	upColor, err := parseRGB(*up)
+	if err != nil {
+		return err
+	}
+	downColor, err := parseRGB(*down)
+	if err != nil {
+		return err
+	}
+
+	f := &flasher{svc: svc, store: store, duration: *duration}
+	fmt.Fprintln(os.Stderr, "openaula watch: esperando eventos (Ctrl+C para salir)")
+	return runWatch(f, *notifications, base, *volume, upColor, downColor)
 }
 
 func cmdWal(svc *device.Service, store *state.Store, args []string) error {
