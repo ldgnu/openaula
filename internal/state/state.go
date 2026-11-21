@@ -36,6 +36,23 @@ type PerKey struct {
 	Colors     map[string]RGB `json:"colors"`
 }
 
+// Events configures which system events flash the keyboard.
+type Events struct {
+	Notifications bool `json:"notifications"`
+	Volume        bool `json:"volume"`
+	Battery       bool `json:"battery"`
+	Sleep         bool `json:"sleep"`
+	Lock          bool `json:"lock"`
+	FullCharge    bool `json:"full_charge"`
+	LEDs          bool `json:"leds"`
+	Schedule      bool `json:"schedule"`
+
+	Threshold int `json:"battery_threshold"`
+	FullLevel int `json:"full_level"`
+	DayStart  int `json:"day_start"`
+	DayEnd    int `json:"day_end"`
+}
+
 // Remap maps source key names to targets, per layer.
 type Remap struct {
 	Normal map[string]string `json:"normal"`
@@ -50,6 +67,7 @@ type Settings struct {
 	OS        string    `json:"os"`
 	FollowWal bool      `json:"follow_wal"`
 	WalIndex  int       `json:"wal_index"`
+	Events    Events    `json:"events"`
 	Updated   time.Time `json:"updated"`
 }
 
@@ -60,6 +78,9 @@ func Default() Settings {
 		PerKey:   PerKey{Brightness: 5, Colors: map[string]RGB{}},
 		Remap:    Remap{Normal: map[string]string{}, FN: map[string]string{}},
 		OS:       "windows",
+		Events: Events{
+			Threshold: 15, FullLevel: 95, DayStart: 8, DayEnd: 20,
+		},
 	}
 }
 
@@ -180,6 +201,15 @@ func normalize(st *Settings) {
 	}
 	if st.OS == "" {
 		st.OS = "windows"
+	}
+	if st.Events.Threshold == 0 {
+		st.Events.Threshold = 15
+	}
+	if st.Events.FullLevel == 0 {
+		st.Events.FullLevel = 95
+	}
+	if st.Events.DayEnd == 0 && st.Events.DayStart == 0 {
+		st.Events.DayStart, st.Events.DayEnd = 8, 20
 	}
 }
 

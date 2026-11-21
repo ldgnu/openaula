@@ -3,6 +3,7 @@ package tui
 import (
 	"github.com/ldgnu/openaula/internal/aula"
 	"github.com/ldgnu/openaula/internal/state"
+	"github.com/ldgnu/openaula/internal/wal"
 )
 
 // DocShot renders a screen with demo data. It exists so the README screenshots
@@ -62,6 +63,17 @@ func DocShot(name string, frame int) string {
 		m.os.cursor = 1
 	case "wal":
 		m.screen = screenWal
+		m.wal.pal = wal.Palette{Path: "~/.cache/wal/colors.json", Colors: [16][3]uint8{
+			{30, 30, 30}, {255, 0, 0}, {0, 255, 0}, {255, 255, 0},
+			{0, 90, 255}, {255, 0, 160}, {0, 255, 255}, {200, 200, 200},
+			{80, 80, 80}, {255, 90, 90}, {90, 255, 90}, {255, 255, 90},
+			{90, 130, 255}, {255, 90, 200}, {90, 255, 255}, {255, 255, 255},
+		}}
+	case "events":
+		m.screen = screenEvents
+		m.events.cursor = evToggle
+		m.settings.Events.Notifications = true
+		m.settings.Events.Volume = true
 	case "info":
 		m.screen = screenInfo
 	case "profiles":

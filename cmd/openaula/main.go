@@ -19,6 +19,7 @@ import (
 	"github.com/ldgnu/openaula/internal/api"
 	"github.com/ldgnu/openaula/internal/aula"
 	"github.com/ldgnu/openaula/internal/device"
+	"github.com/ldgnu/openaula/internal/events"
 	"github.com/ldgnu/openaula/internal/state"
 	"github.com/ldgnu/openaula/internal/tui"
 	"github.com/ldgnu/openaula/internal/wal"
@@ -238,32 +239,31 @@ func cmdFlash(svc *device.Service, store *state.Store, args []string) error {
 	duration := fs.Duration("duration", 150*time.Millisecond, "duración del destello")
 	_ = fs.Parse(args)
 
-	c, err := parseRGB(*color)
+	c, err := events.ParseRGB(*color)
 	if err != nil {
 		return err
 	}
-	f := &flasher{svc: svc, store: store, duration: *duration}
-	f.flash(c)
+	events.Flash(svc, store, c, *duration)
 	return nil
 }
 
 func cmdWatch(svc *device.Service, store *state.Store, args []string) error {
 	fs := flag.NewFlagSet("watch", flag.ExitOnError)
-	o := &watchOpts{}
+	o := events.Opts{}
 	var notifColor, up, down, lowColor, lockColor, fullColor, dayColor, nightColor string
-	fs.BoolVar(&o.notifications, "notifications", false, "destellar con cada notificación de escritorio")
-	fs.BoolVar(&o.volume, "volume", false, "destellar al subir o bajar el volumen")
-	fs.BoolVar(&o.battery, "battery", false, "avisar cuando la batería esté baja")
-	fs.IntVar(&o.threshold, "battery-threshold", 15, "porcentaje para avisar")
-	fs.DurationVar(&o.interval, "battery-interval", time.Minute, "cada cuánto consultar la batería")
-	fs.BoolVar(&o.sleep, "sleep", false, "apagar la luz al suspender y restaurar al volver")
-	fs.BoolVar(&o.lock, "lock", false, "atenuar mientras la sesión está bloqueada")
-	fs.BoolVar(&o.fullCharge, "full-charge", false, "avisar cuando la batería llega al nivel alto")
-	fs.IntVar(&o.fullLevel, "full-level", 95, "porcentaje de batería llena")
-	fs.BoolVar(&o.leds, "leds", false, "destellar al cambiar Caps Lock o Num Lock")
-	fs.BoolVar(&o.schedule, "schedule", false, "cambiar color y brillo según la hora")
-	fs.IntVar(&o.dayStart, "day-start", 8, "hora de inicio del modo día")
-	fs.IntVar(&o.dayEnd, "day-end", 20, "hora de inicio del modo noche")
+	fs.BoolVar(&o.Notifications, "notifications", false, "destellar con cada notificación de escritorio")
+	fs.BoolVar(&o.Volume, "volume", false, "destellar al subir o bajar el volumen")
+	fs.BoolVar(&o.Battery, "battery", false, "avisar cuando la batería esté baja")
+	fs.IntVar(&o.Threshold, "battery-threshold", 15, "porcentaje para avisar")
+	fs.DurationVar(&o.Interval, "battery-interval", time.Minute, "cada cuánto consultar la batería")
+	fs.BoolVar(&o.Sleep, "sleep", false, "apagar la luz al suspender y restaurar al volver")
+	fs.BoolVar(&o.Lock, "lock", false, "atenuar mientras la sesión está bloqueada")
+	fs.BoolVar(&o.FullCharge, "full-charge", false, "avisar cuando la batería llega al nivel alto")
+	fs.IntVar(&o.FullLevel, "full-level", 95, "porcentaje de batería llena")
+	fs.BoolVar(&o.LEDs, "leds", false, "destellar al cambiar Caps Lock o Num Lock")
+	fs.BoolVar(&o.Schedule, "schedule", false, "cambiar color y brillo según la hora")
+	fs.IntVar(&o.DayStart, "day-start", 8, "hora de inicio del modo día")
+	fs.IntVar(&o.DayEnd, "day-end", 20, "hora de inicio del modo noche")
 	fs.StringVar(&notifColor, "color", "255,255,255", "color de las notificaciones")
 	fs.StringVar(&up, "vol-up", "0,255,0", "color al subir el volumen")
 	fs.StringVar(&down, "vol-down", "255,0,0", "color al bajar el volumen")
@@ -272,27 +272,28 @@ func cmdWatch(svc *device.Service, store *state.Store, args []string) error {
 	fs.StringVar(&fullColor, "full-color", "0,255,0", "color de carga completa")
 	fs.StringVar(&dayColor, "day-color", "200,220,255", "color del modo día")
 	fs.StringVar(&nightColor, "night-color", "255,140,60", "color del modo noche")
-	duration := fs.Duration("duration", 150*time.Millisecond, "duración del destello")
+	fs.DurationVar(&o.Duration, "duration", 150*time.Millisecond, "duración del destello")
 	_ = fs.Parse(args)
 
 	for _, pair := range []struct {
 		src string
 		dst *[3]uint8
 	}{
-		{notifColor, &o.notifColor}, {up, &o.up}, {down, &o.down},
-		{lowColor, &o.lowColor}, {lockColor, &o.lockColor}, {fullColor, &o.fullColor},
-		{dayColor, &o.dayColor}, {nightColor, &o.nightColor},
+		{notifColor, &o.NotifColor}, {up, &o.Up}, {down, &o.Down},
+		{lowColor, &o.LowColor}, {lockColor, &o.LockColor}, {fullColor, &o.FullColor},
+		{dayColor, &o.DayColor}, {nightColor, &o.NightColor},
 	} {
-		c, err := parseRGB(pair.src)
+		c, err := events.ParseRGB(pair.src)
 		if err != nil {
 			return err
 		}
 		*pair.dst = c
 	}
 
-	f := &flasher{svc: svc, store: store, duration: *duration}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	fmt.Fprintln(os.Stderr, "openaula watch: esperando eventos (Ctrl+C para salir)")
-	return runWatch(f, o)
+	return events.Run(ctx, svc, store, o)
 }
 
 func cmdWal(svc *device.Service, store *state.Store, args []string) error {

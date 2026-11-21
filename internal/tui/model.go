@@ -33,6 +33,7 @@ const (
 	screenPresets
 	screenOS
 	screenWal
+	screenEvents
 	screenInfo
 )
 
@@ -53,6 +54,7 @@ type Model struct {
 	presets  presetsModel
 	os       osModel
 	wal      walModel
+	events   eventsModel
 	lcd      lcdModel
 	profiles profilesModel
 
@@ -188,6 +190,7 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	if key == "ctrl+c" {
+		m.stopEvents()
 		return m, tea.Quit
 	}
 
@@ -212,6 +215,8 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.updateOS(key)
 	case screenWal:
 		return m.updateWal(key)
+	case screenEvents:
+		return m.updateEvents(key)
 	case screenInfo:
 		return m.updateInfo(key)
 	}
@@ -228,6 +233,7 @@ var menuItems = []struct {
 	{"Ajustes rápidos (F1–F12, Enter)", screenPresets},
 	{"Sistema operativo", screenOS},
 	{"Color de pywal", screenWal},
+	{"Eventos del sistema", screenEvents},
 	{"Reloj del LCD", screenClock},
 	{"Pantalla del LCD", screenLCD},
 	{"Perfiles", screenProfiles},
@@ -255,6 +261,7 @@ func (m *Model) updateMenu(key string) (tea.Model, tea.Cmd) {
 			m.info = aula.Detect()
 		}
 	case "q":
+		m.stopEvents()
 		return m, tea.Quit
 	}
 	return m, nil

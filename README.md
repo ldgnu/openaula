@@ -49,6 +49,10 @@ Cuando no hay nada corriendo, openaula no consume CPU, memoria ni USB.
 
 Los prints salen de la propia TUI con datos de demostración (`tools/shots`).
 
+**Eventos del sistema**
+
+![Eventos](docs/img/events.png)
+
 **Menú principal**
 
 ![Menú principal](docs/img/menu.png)
@@ -297,6 +301,10 @@ openaula watch --notifications --volume --battery
 
 Después del destello vuelve a la configuración guardada. Los eventos seguidos se
 agrupan con un debounce de 120 ms.
+
+Todo esto también está en la TUI: **Eventos del sistema**, con una fila por tipo
+de evento, Enter para activar y una opción para iniciar o detener la vigilancia
+sin salir de openaula.
 
 Para dejarlo permanente hay una unidad de usuario:
 `packaging/systemd/openaula-watch.service`.
